@@ -1,4 +1,4 @@
-## Project info
+## Project info about hackathon
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
 
