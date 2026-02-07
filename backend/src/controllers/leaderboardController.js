@@ -48,11 +48,6 @@ const getLeaderboard = async (req, res, next) => {
           .select('location_id')
           .eq('user_id', user.id);
 
-        const { data: userAchievements } = await supabaseAdmin
-          .from('user_achievements')
-          .select('achievement_id')
-          .eq('user_id', user.id);
-
         const { data: challengeAttempts } = await supabaseAdmin
           .from('challenge_attempts')
           .select('correct')
@@ -71,7 +66,6 @@ const getLeaderboard = async (req, res, next) => {
           current_streak: user.current_streak,
           best_streak: user.best_streak,
           locations_discovered: userLocations?.length || 0,
-          achievements_unlocked: userAchievements?.length || 0,
           accuracy,
           member_since: user.created_at
         };
@@ -142,11 +136,6 @@ const getUserRank = async (req, res, next) => {
       .select('location_id')
       .eq('user_id', user.id);
 
-    const { data: userAchievements } = await supabaseAdmin
-      .from('user_achievements')
-      .select('achievement_id')
-      .eq('user_id', user.id);
-
     const { data: challengeAttempts } = await supabaseAdmin
       .from('challenge_attempts')
       .select('correct, attempted_at')
@@ -190,7 +179,6 @@ const getUserRank = async (req, res, next) => {
         percentile,
         stats: {
           locations_discovered: userLocations?.length || 0,
-          achievements_unlocked: userAchievements?.length || 0,
           total_attempts: totalAttempts,
           correct_attempts: correctAttempts,
           accuracy

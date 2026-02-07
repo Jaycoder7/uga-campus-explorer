@@ -193,17 +193,12 @@ const getMe = async (req, res, next) => {
       .select('location_id')
       .eq('user_id', req.user.id);
 
-    const { data: userAchievements, error: achievementsError } = await supabaseAdmin
-      .from('user_achievements')
-      .select('achievement_id')
-      .eq('user_id', req.user.id);
-
     const { data: challengeAttempts, error: attemptsError } = await supabaseAdmin
       .from('challenge_attempts')
       .select('correct')
       .eq('user_id', req.user.id);
 
-    if (locationsError || achievementsError || attemptsError) {
+    if (locationsError || attemptsError) {
       throw new AppError('Failed to fetch user stats', 500);
     }
 
@@ -218,7 +213,6 @@ const getMe = async (req, res, next) => {
           ...req.user,
           stats: {
             total_locations_discovered: userLocations?.length || 0,
-            total_achievements_unlocked: userAchievements?.length || 0,
             total_attempts: totalAttempts,
             correct_attempts: correctAttempts,
             accuracy

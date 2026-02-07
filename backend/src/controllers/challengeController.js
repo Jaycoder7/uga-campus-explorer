@@ -2,95 +2,7 @@ const { supabaseAdmin } = require('../config/supabase');
 const { AppError } = require('../middleware/errorHandler');
 const { format, startOfDay, isAfter, differenceInDays } = require('date-fns');
 
-const checkAndUnlockAchievements = async (userId) => {
-  try {
-    // Get user stats
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('current_streak, total_points')
-      .eq('id', userId)
-      .single();
-
-    const { data: userLocations } = await supabaseAdmin
-      .from('user_locations')
-      .select('location_id, locations!inner(category)')
-      .eq('user_id', userId);
-
-    const { data: challengeAttempts } = await supabaseAdmin
-      .from('challenge_attempts')
-      .select('correct')
-      .eq('user_id', userId);
-
-    // Get all achievements
-    const { data: achievements } = await supabaseAdmin
-      .from('achievements')
-      .select('*');
-
-    // Get user's existing achievements
-    const { data: userAchievements } = await supabaseAdmin
-      .from('user_achievements')
-      .select('achievement_id')
-      .eq('user_id', userId);
-
-    const existingAchievementIds = userAchievements.map(ua => ua.achievement_id);
-    const newAchievements = [];
-
-    for (const achievement of achievements) {
-      if (existingAchievementIds.includes(achievement.id)) continue;
-
-      let shouldUnlock = false;
-
-      switch (achievement.achievement_type) {
-        case 'first':
-          if (challengeAttempts.length >= achievement.requirement) {
-            shouldUnlock = true;
-          }
-          break;
-
-        case 'streak':
-          if (user.current_streak >= achievement.requirement) {
-            shouldUnlock = true;
-          }
-          break;
-
-        case 'total_locations':
-          if (userLocations.length >= achievement.requirement) {
-            shouldUnlock = true;
-          }
-          break;
-
-        case 'category_specific':
-          const categoryLocations = userLocations.filter(
-            ul => ul.locations.category === achievement.category
-          );
-          if (categoryLocations.length >= achievement.requirement) {
-            shouldUnlock = true;
-          }
-          break;
-      }
-
-      if (shouldUnlock) {
-        newAchievements.push({
-          user_id: userId,
-          achievement_id: achievement.id
-        });
-      }
-    }
-
-    // Insert new achievements
-    if (newAchievements.length > 0) {
-      await supabaseAdmin
-        .from('user_achievements')
-        .insert(newAchievements);
-    }
-
-    return newAchievements.length;
-
-  } catch (error) {
-    console.error('Error checking achievements:', error);
-    return 0;
-  }
-};
+// Achievement system removed - only points and streaks are tracked
 
 const calculatePoints = (isCorrect, isFirstDiscovery, currentStreak) => {
   if (!isCorrect) return 0;
@@ -252,7 +164,6 @@ const submitGuess = async (req, res, next) => {
       location.aliases.some(alias => alias.toLowerCase() === normalizedGuess);
 
     let pointsEarned = 0;
-    let newAchievements = 0;
     let isFirstDiscovery = false;
 
     if (isCorrect) {
@@ -346,8 +257,7 @@ const submitGuess = async (req, res, next) => {
       throw new AppError('Failed to record challenge attempt', 500);
     }
 
-    // Check for new achievements
-    newAchievements = await checkAndUnlockAchievements(req.user.id);
+    // Achievement system removed - only points and streaks are tracked
 
     res.status(200).json({
       success: true,
@@ -359,7 +269,6 @@ const submitGuess = async (req, res, next) => {
           name: location.name,
           fun_fact: location.fun_fact
         },
-        new_achievements_unlocked: newAchievements,
         attempt
       }
     });

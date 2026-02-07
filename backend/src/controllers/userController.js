@@ -17,25 +17,13 @@ const getProfile = async (req, res, next) => {
       `)
       .eq('user_id', req.user.id);
 
-    const { data: userAchievements, error: achievementsError } = await supabaseAdmin
-      .from('user_achievements')
-      .select(`
-        unlocked_at,
-        achievements (
-          name,
-          description,
-          icon
-        )
-      `)
-      .eq('user_id', req.user.id);
-
     const { data: challengeAttempts, error: attemptsError } = await supabaseAdmin
       .from('challenge_attempts')
       .select('correct, attempted_at, points_earned')
       .eq('user_id', req.user.id)
       .order('attempted_at', { ascending: false });
 
-    if (locationsError || achievementsError || attemptsError) {
+    if (locationsError || attemptsError) {
       throw new AppError('Failed to fetch user profile data', 500);
     }
 
@@ -64,14 +52,12 @@ const getProfile = async (req, res, next) => {
         user: req.user,
         stats: {
           total_locations_discovered: userLocations?.length || 0,
-          total_achievements_unlocked: userAchievements?.length || 0,
           total_attempts: totalAttempts,
           correct_attempts: correctAttempts,
           accuracy,
           category_breakdown: categoryStats
         },
         recent_discoveries: userLocations?.slice(0, 5) || [],
-        recent_achievements: userAchievements?.slice(0, 3) || [],
         recent_attempts: challengeAttempts?.slice(0, 10) || []
       }
     });

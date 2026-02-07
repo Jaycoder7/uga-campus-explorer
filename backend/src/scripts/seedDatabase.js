@@ -236,11 +236,10 @@ const clearDatabase = async () => {
     console.log('🗑️  Clearing existing data...');
 
     // Delete in order to respect foreign key constraints
-    await supabaseAdmin.from('user_achievements').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    // Note: Achievement tables removed from system
     await supabaseAdmin.from('user_locations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabaseAdmin.from('challenge_attempts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabaseAdmin.from('daily_challenges').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabaseAdmin.from('achievements').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabaseAdmin.from('locations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
     console.log('✅ Database cleared successfully');
@@ -281,108 +280,7 @@ const seedLocations = async () => {
   }
 };
 
-const seedAchievements = async () => {
-  try {
-    console.log('🏆 Seeding achievements...');
-
-    // Check if achievements already exist
-    const { data: existingAchievements } = await supabaseAdmin
-      .from('achievements')
-      .select('achievement_code');
-
-    if (existingAchievements && existingAchievements.length > 0) {
-      console.log(`✅ Achievements already exist (${existingAchievements.length} found), skipping seeding`);
-      return existingAchievements;
-    }
-
-    const achievements = [
-      {
-        achievement_code: 'ach-001',
-        name: 'First Steps',
-        description: 'Complete your first challenge',
-        icon: '🎯',
-        requirement: 1,
-        achievement_type: 'first'
-      },
-      {
-        achievement_code: 'ach-002',
-        name: 'Week Warrior',
-        description: 'Maintain a 7-day streak',
-        icon: '🔥',
-        requirement: 7,
-        achievement_type: 'streak'
-      },
-      {
-        achievement_code: 'ach-003',
-        name: 'Explorer',
-        description: 'Discover 10 different locations',
-        icon: '🗺️',
-        requirement: 10,
-        achievement_type: 'total_locations'
-      },
-      {
-        achievement_code: 'ach-004',
-        name: 'Scholar',
-        description: 'Discover 5 academic buildings',
-        icon: '📚',
-        requirement: 5,
-        achievement_type: 'category_specific',
-        category: 'academic'
-      },
-      {
-        achievement_code: 'ach-005',
-        name: 'Historian',
-        description: 'Discover 5 historic landmarks',
-        icon: '🏛️',
-        requirement: 5,
-        achievement_type: 'category_specific',
-        category: 'historic'
-      },
-      {
-        achievement_code: 'ach-006',
-        name: 'Dawg Fan',
-        description: 'Discover 3 athletic facilities',
-        icon: '🏈',
-        requirement: 3,
-        achievement_type: 'category_specific',
-        category: 'athletic'
-      },
-      {
-        achievement_code: 'ach-007',
-        name: 'Home Away From Home',
-        description: 'Discover 5 residence halls',
-        icon: '🏠',
-        requirement: 5,
-        achievement_type: 'category_specific',
-        category: 'residence'
-      },
-      {
-        achievement_code: 'ach-008',
-        name: 'Foodie',
-        description: 'Discover 3 dining locations',
-        icon: '🍕',
-        requirement: 3,
-        achievement_type: 'category_specific',
-        category: 'dining'
-      }
-    ];
-
-    const { data: insertedAchievements, error } = await supabaseAdmin
-      .from('achievements')
-      .insert(achievements)
-      .select();
-
-    if (error) {
-      throw error;
-    }
-
-    console.log(`✅ Seeded ${insertedAchievements.length} achievements`);
-    return insertedAchievements;
-  } catch (error) {
-    console.error('❌ Error seeding achievements:', error);
-    throw error;
-  }
-};
+// Achievement system removed - function no longer needed
 
 const seedChallenges = async () => {
   try {
@@ -431,22 +329,19 @@ const seedDatabase = async (clearFirst = false) => {
     // Seed locations first (required for challenges)
     const locations = await seedLocations();
 
-    // Seed achievements
-    const achievements = await seedAchievements();
-
+    // Achievement system removed - only seed locations and challenges
     // Seed daily challenges
     const challenges = await seedChallenges();
 
     console.log('\n🎉 Database seeding completed successfully!');
     console.log(`📊 Summary:`);
     console.log(`   • ${locations.length} locations`);
-    console.log(`   • ${achievements.length} achievements`);
     console.log(`   • ${challenges.length} daily challenges`);
+    console.log(`   • Points and streaks system active`);
     console.log('\n🚀 Your UGA Campus Explorer backend is ready to go!');
 
     return {
       locations,
-      achievements,
       challenges
     };
 
@@ -475,6 +370,5 @@ module.exports = {
   seedDatabase,
   clearDatabase,
   seedLocations,
-  seedAchievements,
   seedChallenges
 };

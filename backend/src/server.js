@@ -15,7 +15,6 @@ const authRoutes = require('./routes/auth');
 const challengeRoutes = require('./routes/challenges');
 const userRoutes = require('./routes/users');
 const leaderboardRoutes = require('./routes/leaderboard');
-const achievementRoutes = require('./routes/achievements');
 const locationRoutes = require('./routes/locations');
 
 // Import utilities
@@ -90,7 +89,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
-app.use('/api/achievements', achievementRoutes);
 app.use('/api/locations', locationRoutes);
 
 // Root endpoint
@@ -157,7 +155,6 @@ const startServer = async () => {
         console.log('  GET  /api/challenges/today - Get today\'s challenge');
         console.log('  POST /api/challenges/submit - Submit challenge guess');
         console.log('  GET  /api/leaderboard - Get leaderboard');
-        console.log('  GET  /api/achievements - Get all achievements');
         console.log('  GET  /api/locations - Get all locations');
         console.log('\n🎮 Happy gaming!');
       }
