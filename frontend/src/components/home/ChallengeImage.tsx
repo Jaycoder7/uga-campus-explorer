@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ZoomIn, ZoomOut, Lightbulb, MapPin } from 'lucide-react';
+import { ZoomIn, ZoomOut, Lightbulb, MapPin, Image, Box } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGame } from '@/context/GameContext';
+import { Scene3D } from './Scene3D';
 
 interface ChallengeImageProps {
   onGuess: () => void;
@@ -13,6 +14,7 @@ export function ChallengeImage({ onGuess }: ChallengeImageProps) {
   const [showHint, setShowHint] = useState(false);
   const [hintAvailable, setHintAvailable] = useState(false);
   const [timeElapsed, setTimeElapsed] = useState(0);
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('3d');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -43,21 +45,50 @@ export function ChallengeImage({ onGuess }: ChallengeImageProps) {
       {/* Image Container */}
       <div className="relative overflow-hidden rounded-2xl bg-muted shadow-card">
         <div className="aspect-video overflow-hidden">
-          <div
-            className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 via-muted to-secondary/20 transition-transform duration-300"
-            style={{ transform: `scale(${zoom})` }}
-          >
-            {/* Placeholder for actual image */}
-            <div className="flex flex-col items-center gap-4 text-center">
-              <MapPin className="h-16 w-16 text-primary/50" />
-              <p className="text-sm text-muted-foreground">
-                Mystery Location Photo
-              </p>
-              <p className="text-xs text-muted-foreground/70">
-                (Image would display here)
-              </p>
+          {viewMode === '3d' ? (
+            <div className="h-full w-full">
+              <Scene3D 
+                locationId={todayChallenge?.location} 
+                zoom={zoom}
+              />
             </div>
-          </div>
+          ) : (
+            <div
+              className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 via-muted to-secondary/20 transition-transform duration-300"
+              style={{ transform: `scale(${zoom})` }}
+            >
+              {/* Placeholder for actual image */}
+              <div className="flex flex-col items-center gap-4 text-center">
+                <MapPin className="h-16 w-16 text-primary/50" />
+                <p className="text-sm text-muted-foreground">
+                  Mystery Location Photo
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  (Image would display here)
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* View Mode Toggle */}
+        <div className="absolute top-4 right-4 flex gap-2">
+          <Button
+            variant={viewMode === '3d' ? 'default' : 'secondary'}
+            size="icon"
+            onClick={() => setViewMode('3d')}
+            className="h-10 w-10 rounded-full bg-card/90 shadow-lg backdrop-blur-sm"
+          >
+            <Box className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === '2d' ? 'default' : 'secondary'}
+            size="icon"
+            onClick={() => setViewMode('2d')}
+            className="h-10 w-10 rounded-full bg-card/90 shadow-lg backdrop-blur-sm"
+          >
+            <Image className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Zoom Controls */}
