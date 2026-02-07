@@ -95,7 +95,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+
 
 # Vite build output
 frontend/dist
