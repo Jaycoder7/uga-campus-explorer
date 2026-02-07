@@ -287,9 +287,55 @@ const getDiscoveries = async (req, res, next) => {
   }
 };
 
+/**
+ * Sync the logged-in Supabase user to the backend database.
+ * Creates a new record if it doesn't exist.
+ */
+const syncUser = async (req, res) => {
+  try {
+    const authUser = req.authUser; // from protect middleware
+
+    // Check if user exists
+    const { data: existingUser, error: fetchError } = await supabaseAdmin
+      .from("users")
+      .select("*")
+      .eq("id", authUser.id)
+      .single();
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      // PGRST116 = no rows found, ignore
+      throw fetchError;
+    }
+
+    let user = existingUser;
+
+    // If not, insert a new user
+    if (!existingUser) {
+      const { data: newUser, error: insertError } = await supabaseAdmin
+        .from("users")
+        .insert({
+          id: authUser.id,
+          email: authUser.email,
+          created_at: new Date(),
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      user = newUser;
+    }
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error("syncUser error:", err);
+    res.status(500).json({ success: false, error: "Failed to sync user" });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
   getStats,
-  getDiscoveries
+  getDiscoveries,
+  syncUser
 };

@@ -3,7 +3,8 @@ const {
   getProfile,
   updateProfile,
   getStats,
-  getDiscoveries
+  getDiscoveries,
+  syncUser
 } = require('../controllers/userController');
 const { protect } = require('../middleware/auth');
 const { validateUpdateProfile } = require('../middleware/validation');
@@ -14,5 +15,7 @@ router.get('/profile', protect, getProfile);
 router.put('/profile', protect, validateUpdateProfile, updateProfile);
 router.get('/stats', protect, getStats);
 router.get('/discoveries', protect, getDiscoveries);
+router.post('/sync', protect, syncUser);
+
 
 module.exports = router;
