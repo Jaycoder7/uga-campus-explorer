@@ -137,30 +137,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
       location?.aliases.some(alias => alias.toLowerCase() === normalizedGuess) ||
       (location?.buildingCode && normalizedGuess === location.buildingCode.toLowerCase());
 
+    // Determine if this is a retry (user already submitted for today)
+    const isRetry = gameState.todayCompleted === true;
+
     let pointsEarned = 0;
     const today = format(new Date(), 'yyyy-MM-dd');
-
-    if (isCorrect) {
-      // Base points
-      pointsEarned = 50;
-      
-      // First discovery bonus
-      if (location && !gameState.discoveredLocations.includes(location.id)) {
-        pointsEarned += 25;
-      }
-      
-      // Streak multiplier
-      const newStreak = gameState.currentStreak + 1;
-      if (newStreak >= 10) {
-        pointsEarned = Math.floor(pointsEarned * 2);
-      } else if (newStreak >= 5) {
-        pointsEarned = Math.floor(pointsEarned * 1.5);
-      }
+    // Scoring rules:
+    // - If correct on first attempt -> award 10 points.
+    // - If incorrect first, then correct on retry -> award 0 points.
+    // - No other bonuses apply for map-based flow.
+    if (isCorrect && !isRetry) {
+      pointsEarned = 10;
+    } else {
+      pointsEarned = 0;
     }
 
     setGameState(prev => {
-      const newStreak = isCorrect ? prev.currentStreak + 1 : 0;
-      const newDiscovered = location && isCorrect && !prev.discoveredLocations.includes(location.id)
+      const newStreak = isCorrect && !prev.todayCompleted ? prev.currentStreak + 1 : 0;
+      const newDiscovered = location && isCorrect && !prev.discoveredLocations.includes(location.id) && !prev.todayCompleted
         ? [...prev.discoveredLocations, location.id]
         : prev.discoveredLocations;
       
@@ -182,12 +176,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
         newAchievements.push('ach-003');
       }
 
+      const completed = prev.completedChallenges.includes(todayChallenge.id)
+        ? prev.completedChallenges
+        : [...prev.completedChallenges, todayChallenge.id]
+
       return {
         ...prev,
         currentStreak: newStreak,
         bestStreak: Math.max(prev.bestStreak, newStreak),
         totalPoints: prev.totalPoints + pointsEarned,
-        completedChallenges: [...prev.completedChallenges, todayChallenge.id],
+        completedChallenges: completed,
         todayCompleted: true,
         todayCorrect: isCorrect,
         lastPlayedDate: today,
