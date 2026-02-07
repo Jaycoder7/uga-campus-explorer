@@ -35,6 +35,7 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
   const [showExplore, setShowExplore] = useState(false);
   const [userDistance, setUserDistance] = useState<number | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [showLocationMap, setShowLocationMap] = useState(false);
 
   useEffect(() => {
     setDisplayCorrect(correct)
@@ -136,6 +137,18 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
             })()} away from the correct location.
           </p>
         )}
+        
+        {/* View Location on Map Button */}
+        <div className="mt-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setShowLocationMap(true)}
+          >
+            <MapPin className="mr-2 h-4 w-4" />
+            View Location on Map
+          </Button>
+        </div>
       </div>
 
       {/* Directions (for incorrect answers) */}
