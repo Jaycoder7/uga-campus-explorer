@@ -10,6 +10,10 @@ interface GameContextType {
   submitGuess: (guess: string) => { correct: boolean; points: number };
   resetGame: () => void;
   isLoading: boolean;
+  lastMapDistance?: number | null;
+  setLastMapDistance?: (d: number | null) => void;
+  mapView?: { center: [number, number]; zoom: number } | null;
+  setMapView?: (v: { center: [number, number]; zoom: number } | null) => void;
 }
 
 const STORAGE_KEY = 'uga-explorer-state';
@@ -65,6 +69,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(defaultGameState);
   const [isLoading, setIsLoading] = useState(true);
   const [todayChallenge, setTodayChallenge] = useState<DailyChallenge | null>(null);
+  const [lastMapDistance, setLastMapDistance] = useState<number | null>(null);
+  const [mapView, setMapView] = useState<{ center: [number, number]; zoom: number } | null>(null);
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -207,6 +213,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         submitGuess,
         resetGame,
         isLoading,
+        lastMapDistance,
+        setLastMapDistance,
+        mapView,
+        setMapView,
       }}
     >
       {children}
