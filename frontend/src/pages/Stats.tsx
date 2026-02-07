@@ -14,7 +14,7 @@ export default function Stats() {
         const {
           data: { user },
         } = await supabase.auth.getUser();
-
+        console.log("Current user:", user);
         if (!user) return;
 
         // Fetch stats from backend

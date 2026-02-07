@@ -210,9 +210,92 @@ const getDiscoveries = async (req, res, next) => {
   }
 };
 
+/**
+ * Sync the logged-in Supabase user to the backend database.
+ * Creates a new record if it doesn't exist.
+ */
+const syncUser = async (req, res) => {
+  try {
+    const authUser = req.authUser; // from protect middleware
+
+    // Check if user exists
+    const { data: existingUser, error: fetchError } = await supabaseAdmin
+      .from("users")
+      .select("*")
+      .eq("id", authUser.id)
+      .single();
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      // PGRST116 = no rows found, ignore
+      throw fetchError;
+    }
+
+    let user = existingUser;
+
+    // If not, insert a new user
+    if (!existingUser) {
+      const { data: newUser, error: insertError } = await supabaseAdmin
+        .from("users")
+        .insert({
+          id: authUser.id,
+          email: authUser.email,
+          created_at: new Date(),
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      user = newUser;
+    }
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error("syncUser error:", err);
+    res.status(500).json({ success: false, error: "Failed to sync user" });
+  }
+};
+
+const updateTotalPoints = async (req, res, next) => {
+  try {
+    const { points } = req.body;
+
+    if (typeof points !== 'number') {
+      return res.status(400).json({ success: false, error: 'Invalid points' });
+    }
+
+    // Fetch user total points
+    const { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select('total_points')
+      .eq('id', req.userId) // <- use req.userId from protect middleware
+      .single();
+
+    if (error) throw new Error('Failed to fetch user points');
+
+    // Update total points
+    const { data: updatedUser, error: updateError } = await supabaseAdmin
+      .from('users')
+      .update({ total_points: (user.total_points || 0) + points })
+      .eq('id', req.userId) // <- use req.userId here too
+      .select()
+      .single();
+
+    if (updateError) throw new Error('Failed to update points');
+
+    res.status(200).json({ success: true, data: { user: updatedUser } });
+
+  } catch (err) {
+    console.error('updateTotalPoints error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+
 module.exports = {
   getProfile,
   updateProfile,
   getStats,
-  getDiscoveries
+  getDiscoveries,
+  syncUser,
+  updateTotalPoints,
 };
