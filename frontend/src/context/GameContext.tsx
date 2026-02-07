@@ -10,6 +10,10 @@ interface GameContextType {
   submitGuess: (guess: string) => { correct: boolean; points: number };
   resetGame: () => void;
   isLoading: boolean;
+  lastMapDistance?: number | null;
+  setLastMapDistance?: (d: number | null) => void;
+  mapView?: { center: [number, number]; zoom: number } | null;
+  setMapView?: (v: { center: [number, number]; zoom: number } | null) => void;
 }
 
 const STORAGE_KEY = 'uga-explorer-state';
@@ -65,6 +69,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(defaultGameState);
   const [isLoading, setIsLoading] = useState(true);
   const [todayChallenge, setTodayChallenge] = useState<DailyChallenge | null>(null);
+  const [lastMapDistance, setLastMapDistance] = useState<number | null>(null);
+  const [mapView, setMapView] = useState<{ center: [number, number]; zoom: number } | null>(null);
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -131,30 +137,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
       location?.aliases.some(alias => alias.toLowerCase() === normalizedGuess) ||
       (location?.buildingCode && normalizedGuess === location.buildingCode.toLowerCase());
 
+    // Determine if this is a retry (user already submitted for today)
+    const isRetry = gameState.todayCompleted === true;
+
     let pointsEarned = 0;
     const today = format(new Date(), 'yyyy-MM-dd');
-
+    // Scoring rules:
+    // - If correct -> award 10 points (even on retry)
+    // - If incorrect -> award 0 points
     if (isCorrect) {
-      // Base points
-      pointsEarned = 50;
-      
-      // First discovery bonus
-      if (location && !gameState.discoveredLocations.includes(location.id)) {
-        pointsEarned += 25;
-      }
-      
-      // Streak multiplier
-      const newStreak = gameState.currentStreak + 1;
-      if (newStreak >= 10) {
-        pointsEarned = Math.floor(pointsEarned * 2);
-      } else if (newStreak >= 5) {
-        pointsEarned = Math.floor(pointsEarned * 1.5);
-      }
+      pointsEarned = 10;
+    } else {
+      pointsEarned = 0;
     }
 
     setGameState(prev => {
-      const newStreak = isCorrect ? prev.currentStreak + 1 : 0;
-      const newDiscovered = location && isCorrect && !prev.discoveredLocations.includes(location.id)
+      const newStreak = isCorrect && !prev.todayCompleted ? prev.currentStreak + 1 : 0;
+      const newDiscovered = location && isCorrect && !prev.discoveredLocations.includes(location.id) && !prev.todayCompleted
         ? [...prev.discoveredLocations, location.id]
         : prev.discoveredLocations;
       
@@ -176,12 +175,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
         newAchievements.push('ach-003');
       }
 
+      const completed = prev.completedChallenges.includes(todayChallenge.id)
+        ? prev.completedChallenges
+        : [...prev.completedChallenges, todayChallenge.id]
+
       return {
         ...prev,
         currentStreak: newStreak,
         bestStreak: Math.max(prev.bestStreak, newStreak),
         totalPoints: prev.totalPoints + pointsEarned,
-        completedChallenges: [...prev.completedChallenges, todayChallenge.id],
+        completedChallenges: completed,
         todayCompleted: true,
         todayCorrect: isCorrect,
         lastPlayedDate: today,
@@ -207,6 +210,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         submitGuess,
         resetGame,
         isLoading,
+        lastMapDistance,
+        setLastMapDistance,
+        mapView,
+        setMapView,
       }}
     >
       {children}
