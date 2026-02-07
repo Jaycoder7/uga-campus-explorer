@@ -43,10 +43,10 @@ export function ChallengeImage({ onGuess }: ChallengeImageProps) {
   return (
     <div className="animate-scale-in space-y-4">
       {/* Image Container */}
-      <div className="relative overflow-hidden rounded-2xl bg-muted shadow-card">
+      <div className={`relative overflow-hidden bg-muted shadow-card ${viewMode === '3d' ? '' : 'rounded-2xl'}`}>
         <div className="aspect-video overflow-hidden">
           {viewMode === '3d' ? (
-            <div className="h-full w-full">
+            <div className="h-full w-full m-0 p-0">
               <Scene3D 
                 locationId={todayChallenge?.location} 
                 zoom={zoom}
