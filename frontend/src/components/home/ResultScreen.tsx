@@ -9,16 +9,16 @@ type Coords = { lng: number; lat: number }
 
 function haversine(a: Coords, b: Coords) {
   const toRad = (v: number) => (v * Math.PI) / 180;
-  const R = 6371e3; // meters
-  const phi1 = toRad(a.lat);
-  const phi2 = toRad(b.lat);
-  const dPhi = toRad(b.lat - a.lat);
-  const dLambda = toRad(b.lng - a.lng);
-
-  const aa = Math.sin(dPhi / 2) * Math.sin(dPhi / 2) +
-    Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda / 2) * Math.sin(dLambda / 2);
+  const R = 6371000; // Earth's radius in meters (more precise)
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  
+  const aa = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  
   const c = 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1 - aa));
-  return R * c;
+  return R * c; // distance in meters
 }
 
 interface ResultScreenProps {
@@ -59,7 +59,7 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
             lng: position.coords.longitude,
             lat: position.coords.latitude
           }
-          const distance = haversine(userCoords, { lng: todayChallenge.coordinates.lng, lat: todayChallenge.coordinates.lat })
+          const distance = haversine(userCoords, todayChallenge.coordinates)
           setUserDistance(distance)
           setShowExplore(true)
           setLoadingLocation(false)
@@ -273,13 +273,7 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
             </div>
             <h3 className="text-xl font-bold text-foreground">Distance to {todayChallenge.locationName}</h3>
             <p className="mt-3 text-3xl font-bold text-primary">
-              {(() => {
-                const distFt = userDistance / 0.3048;
-                if (distFt > 600) {
-                  return `${(distFt / 5280).toFixed(2)} miles`;
-                }
-                return `${distFt.toFixed(0)} ft`;
-              })()}
+              {(userDistance / 1609.34).toFixed(2)} miles
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               from your current location
