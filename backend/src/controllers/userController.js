@@ -127,103 +127,26 @@ const updateProfile = async (req, res, next) => {
 
 const getStats = async (req, res, next) => {
   try {
-    // Get comprehensive user statistics
-    const { data: challengeAttempts, error: attemptsError } = await supabaseAdmin
-      .from('challenge_attempts')
-      .select(`
-        correct,
-        points_earned,
-        attempted_at,
-        daily_challenges (
-          challenge_date,
-          locations (
-            category
-          )
-        )
-      `)
-      .eq('user_id', req.user.id);
+    const { userId } = req.params; // or req.body depending on how you send it
 
-    const { data: userLocations, error: locationsError } = await supabaseAdmin
-      .from('user_locations')
-      .select(`
-        discovered_at,
-        locations (
-          category
-        )
-      `)
-      .eq('user_id', req.user.id);
-
-    if (attemptsError || locationsError) {
-      throw new AppError('Failed to fetch user statistics', 500);
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
     }
 
-    const totalAttempts = challengeAttempts?.length || 0;
-    const correctAttempts = challengeAttempts?.filter(attempt => attempt.correct).length || 0;
-    const accuracy = totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 0;
+    // Fetch user stats
+    const { data, error } = await supabaseAdmin
+      .from("users")
+      .select("current_streak, best_streak, total_points, total_locations")
+      .eq("id", userId)
+      .single(); // .single() ensures you only get one object
 
-    // Category-wise accuracy
-    const categoryAccuracy = {};
-    const categories = ['academic', 'historic', 'athletic', 'residence', 'dining'];
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
 
-    categories.forEach(category => {
-      const categoryAttempts = challengeAttempts?.filter(
-        attempt => attempt.daily_challenges.locations.category === category
-      ) || [];
-      const categoryCorrect = categoryAttempts.filter(attempt => attempt.correct).length;
-      
-      categoryAccuracy[category] = {
-        attempts: categoryAttempts.length,
-        correct: categoryCorrect,
-        accuracy: categoryAttempts.length > 0 
-          ? Math.round((categoryCorrect / categoryAttempts.length) * 100) 
-          : 0
-      };
-    });
-
-    // Monthly breakdown (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const monthlyStats = {};
-    challengeAttempts?.forEach(attempt => {
-      const attemptDate = new Date(attempt.attempted_at);
-      if (attemptDate >= sixMonthsAgo) {
-        const monthKey = attemptDate.toISOString().substring(0, 7); // YYYY-MM format
-        if (!monthlyStats[monthKey]) {
-          monthlyStats[monthKey] = { attempts: 0, correct: 0, points: 0 };
-        }
-        monthlyStats[monthKey].attempts++;
-        if (attempt.correct) monthlyStats[monthKey].correct++;
-        monthlyStats[monthKey].points += attempt.points_earned;
-      }
-    });
-
-    // Discovery timeline
-    const discoveryTimeline = userLocations?.map(ul => ({
-      date: ul.discovered_at,
-      category: ul.locations.category
-    })).sort((a, b) => new Date(a.date) - new Date(b.date)) || [];
-
-    res.status(200).json({
-      success: true,
-      data: {
-        overall: {
-          total_attempts: totalAttempts,
-          correct_attempts: correctAttempts,
-          accuracy,
-          total_points: req.user.total_points,
-          current_streak: req.user.current_streak,
-          best_streak: req.user.best_streak,
-          total_locations: userLocations?.length || 0
-        },
-        category_accuracy: categoryAccuracy,
-        monthly_breakdown: monthlyStats,
-        discovery_timeline: discoveryTimeline
-      }
-    });
-
-  } catch (error) {
-    next(error);
+    return res.status(200).json(data);
+  } catch (err) {
+    return res.status(500).json({ error: "Server error" });
   }
 };
 
