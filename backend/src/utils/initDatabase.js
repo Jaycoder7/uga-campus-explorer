@@ -15,19 +15,8 @@ const initializeDatabase = async () => {
       throw locationsError;
     }
 
-    const { data: achievementsData, error: achievementsError } = await supabaseAdmin
-      .from('achievements')
-      .select('id')
-      .limit(1);
-
-    if (achievementsError) {
-      console.error('Error checking achievements table:', achievementsError);
-      throw achievementsError;
-    }
-
     // Log database status
     console.log(`Locations in database: ${locationsData?.length || 0}`);
-    console.log(`Achievements in database: ${achievementsData?.length || 0}`);
 
     // Check daily challenges table
     const { data: challengesData, error: challengesError } = await supabaseAdmin
@@ -87,11 +76,6 @@ const getDatabaseStats = async () => {
       .from('locations')
       .select('*', { count: 'exact', head: true });
 
-    // Count achievements
-    const { count: achievementCount } = await supabaseAdmin
-      .from('achievements')
-      .select('*', { count: 'exact', head: true });
-
     // Count daily challenges
     const { count: challengeCount } = await supabaseAdmin
       .from('daily_challenges')
@@ -107,18 +91,11 @@ const getDatabaseStats = async () => {
       .from('user_locations')
       .select('*', { count: 'exact', head: true });
 
-    // Count user achievements
-    const { count: userAchievementCount } = await supabaseAdmin
-      .from('user_achievements')
-      .select('*', { count: 'exact', head: true });
-
     stats.users = userCount || 0;
     stats.locations = locationCount || 0;
-    stats.achievements = achievementCount || 0;
     stats.daily_challenges = challengeCount || 0;
     stats.challenge_attempts = attemptCount || 0;
     stats.user_discoveries = discoveryCount || 0;
-    stats.user_achievements = userAchievementCount || 0;
 
     return stats;
 
