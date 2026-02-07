@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { supabase } from "@/lib/supabaseClient"
 import { PageLayout } from "@/components/layout/PageLayout"
 
@@ -8,27 +9,53 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
 
-  const handleSignup = async () => {
-    setError(null)
-    setMessage(null)
+  useEffect(() => {
+          const checkUser = async () => {
+              const {
+                  data: { session },
+              } = await supabase.auth.getSession()
+  
+              if (session) {
+                  // User is logged in, redirect to home
+                  navigate("/")
+              }
+          }
+  
+          checkUser()
+      }, [navigate])
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
-    }
+ const handleSignup = async () => {
+  setError(null)
+  setMessage(null)
+  
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+  if (password !== confirmPassword) {
+    setError("Passwords do not match")
+    return
+  }
 
-    if (error) {
-      setError(error.message)
+  try {
+    const res = await fetch("http://localhost:3001/api/auth/signup", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email, password, username: email.split("@")[0] })
+});
+
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.error || "Signup failed")
     } else {
       setMessage("Check your email to verify your account!")
     }
+  } catch (err: any) {
+    setError(err.message || "Something went wrong")
   }
+}
+
 
   return (
     <PageLayout title="Create Account">
