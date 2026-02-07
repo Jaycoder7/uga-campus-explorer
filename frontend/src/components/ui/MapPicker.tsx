@@ -30,31 +30,35 @@ export default function MapPicker({ isOpen, initial, onClose, onSelect }: Props)
       return
     }
 
-    // Use MapLibre demo globe style (no API key) for a 3D globe-like view
-    const env = (import.meta as any).env || {}
-    const key = env.VITE_MAPTILER_KEY
-    const styleEnv = env.VITE_MAPTILER_STYLE
-
-    let mapStyle = 'https://demotiles.maplibre.org/style.json'
-    if (key) {
-      if (styleEnv) {
-        // styleEnv may be a full URL or a MapTiler style id
-        if (styleEnv.startsWith('http')) {
-          mapStyle = styleEnv.includes('key=') ? styleEnv : `${styleEnv}${styleEnv.includes('?') ? '&' : '?'}key=${key}`
-        } else {
-          mapStyle = `https://api.maptiler.com/maps/${styleEnv}/style.json?key=${key}`
+    // Use OpenStreetMap style - reliable and completely free, no API key needed
+    const mapStyle = {
+      version: 8,
+      sources: {
+        osm: {
+          type: 'raster',
+          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '&copy; OpenStreetMap Contributors',
+          maxzoom: 19
         }
-      } else {
-        mapStyle = `https://api.maptiler.com/maps/streets/style.json?key=${key}`
-      }
+      },
+      layers: [
+        {
+          id: 'osm',
+          type: 'raster',
+          source: 'osm',
+          minzoom: 0,
+          maxzoom: 22
+        }
+      ]
     }
 
     const startCenter = initial ? [initial.lng, initial.lat] : (mapView ? mapView.center : [ATHENS_CENTER.lng, ATHENS_CENTER.lat])
     const startZoom = mapView ? mapView.zoom : 14
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: mapStyle,
-      center: startCenter,
+      style: mapStyle as any,
+      center: startCenter as [number, number],
       zoom: startZoom,
       maxBounds: ATHENS_BOUNDS,
     })

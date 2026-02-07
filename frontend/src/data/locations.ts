@@ -62,7 +62,7 @@ export const UGA_LOCATIONS: Location[] = [
     id: 'loc-006',
     name: 'The Arch',
     category: 'historic',
-    coordinates: { lat: 33.9570, lng: -83.3734 },
+    coordinates: { lat: 33.95751912522247, lng: -83.37529630237793 },
     imageUrl: '/placeholder.svg',
     funFact: 'Legend says if you walk under the Arch before graduation, you\'ll never graduate!',
     yearBuilt: 1858,
@@ -223,7 +223,7 @@ export const MOCK_CHALLENGES: DailyChallenge[] = [
     imageUrl: '/placeholder.svg',
     hint: 'This is the most iconic symbol of UGA, and legend says walking through it has consequences...',
     funFact: 'Legend says if you walk under the Arch before graduation, you\'ll never graduate!',
-    coordinates: { lat: 33.9570, lng: -83.3734 },
+    coordinates: { lat: 33.95751912522247, lng: -83.37529630237793 },
     directions: [
       'Start at Tate Student Center main entrance',
       'Walk north on Sanford Drive',

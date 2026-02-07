@@ -143,10 +143,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     let pointsEarned = 0;
     const today = format(new Date(), 'yyyy-MM-dd');
     // Scoring rules:
-    // - If correct on first attempt -> award 10 points.
-    // - If incorrect first, then correct on retry -> award 0 points.
-    // - No other bonuses apply for map-based flow.
-    if (isCorrect && !isRetry) {
+    // - If correct -> award 10 points (even on retry)
+    // - If incorrect -> award 0 points
+    if (isCorrect) {
       pointsEarned = 10;
     } else {
       pointsEarned = 0;
