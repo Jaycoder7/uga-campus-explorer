@@ -1,4 +1,5 @@
 # UGA Campus Explorer
+## Project info about hackathon
 
 A complete location-based campus discovery game for the University of Georgia. Players explore campus by solving daily location challenges, discovering landmarks, and unlocking achievements.
 
