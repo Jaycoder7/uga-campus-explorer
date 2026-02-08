@@ -423,7 +423,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const exploreLocation = async (): Promise<{ success: boolean; points: number; streakPreserved: boolean; error?: string }> => {
     if (!canPlay) {
-      return { success: false, points: 0, streakPreserved: false, error: 'You have already played today. Come back tomorrow!' };
+      return { success: false, points: 0, streakPreserved: false, error: 'You have already played TODAY. Come back tomorrow!' };
     }
 
     try {

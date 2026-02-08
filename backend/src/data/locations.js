@@ -66,7 +66,7 @@ function getChallengeForDate(date) {
   }
   
   // Use date only for consistent daily challenge (same challenge all day)
-  c// For testing, use current time in milliseconds to get different locations more often
+  // For testing, use current time in milliseconds to get different locations more often
   const now = new Date();
   // TEST MODE: Change location every 30 seconds for rapid testing
   const seed = parseInt(dateStr.replace(/-/g, '')) + Math.floor(now.getTime() / (1000 * 300)); // Change every 30 seconds
