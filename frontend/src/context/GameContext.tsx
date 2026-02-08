@@ -84,7 +84,7 @@ function getChallengeForDate(date: Date): DailyChallenge {
   // For testing, use current time in milliseconds to get different locations more often
   const now = new Date();
   // TEST MODE: Change location every 30 seconds for rapid testing
-  const seed = parseInt(format(date, 'yyyyMMdd')) + Math.floor(now.getTime() / (1000 * 30)); // Change every 30 seconds
+  const seed = parseInt(format(date, 'yyyyMMdd')) + Math.floor(now.getTime() / (1000 * 300)); // Change every 30 seconds
   const locationIndex = Math.abs(seed) % locationsWithModels.length;
   const location = locationsWithModels[locationIndex];
   
