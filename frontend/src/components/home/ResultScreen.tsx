@@ -27,12 +27,14 @@ interface ResultScreenProps {
 }
 
 export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps) {
-  const { gameState, todayChallenge, lastMapDistance } = useGame();
+  const { gameState, todayChallenge, lastMapDistance, exploreLocation } = useGame();
   const [showDirections, setShowDirections] = useState(false);
   const [showExplore, setShowExplore] = useState(false);
   const [userDistance, setUserDistance] = useState<number | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [loadingExplore, setLoadingExplore] = useState(false);
   const [showLocationMap, setShowLocationMap] = useState(false);
+  const [exploreResult, setExploreResult] = useState<{ points: number; streakPreserved: boolean } | null>(null);
 
 
   const handleExplore = () => {
@@ -73,6 +75,31 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
       setLoadingLocation(false)
     }
   }
+
+  const handleStreakPreservingExplore = async () => {
+    setLoadingExplore(true);
+    
+    try {
+      console.log('🧭 User clicked Explore & Keep Streak');
+      const result = await exploreLocation();
+      
+      if (result.success) {
+        setExploreResult({
+          points: result.points,
+          streakPreserved: result.streakPreserved
+        });
+        console.log('✅ Explore successful!', result);
+      } else {
+        alert(result.error || 'Failed to explore location');
+        console.error('❌ Explore failed:', result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error during explore:', error);
+      alert('Failed to explore location. Please try again.');
+    } finally {
+      setLoadingExplore(false);
+    }
+  };
 
   if (!todayChallenge) return null;
 
@@ -210,16 +237,33 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
               </p>
             </div>
           )}
-          <div className="px-6 pb-6">
+          <div className="px-6 pb-6 space-y-2">
             <Button
               variant="outline"
-              className="mt-2 w-full"
+              className="w-full"
               onClick={handleExplore}
               disabled={loadingLocation}
             >
               <Navigation className="mr-2 h-4 w-4" />
-              {loadingLocation ? 'Getting your location...' : 'Explore'}
+              {loadingLocation ? 'Getting your location...' : 'Get Directions'}
             </Button>
+            
+            {/* New Explore button that preserves streak */}
+            <Button
+              variant="default"
+              className="w-full bg-success hover:bg-success/90"
+              onClick={handleStreakPreservingExplore}
+              disabled={loadingExplore || exploreResult !== null}
+            >
+              <MapPin className="mr-2 h-4 w-4" />
+              {loadingExplore ? 'Exploring...' : exploreResult ? `Explored! +${exploreResult.points} pts` : 'Explore & Keep Streak'}
+            </Button>
+            
+            {exploreResult && exploreResult.streakPreserved && (
+              <p className="text-center text-sm text-success">
+                🔥 Streak preserved! Great job exploring campus!
+              </p>
+            )}
           </div>
         </div>
       )}

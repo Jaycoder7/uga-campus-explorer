@@ -9,8 +9,10 @@ interface GameContextType {
   todayChallenge: DailyChallenge | null;
   startChallenge: () => void;
   submitGuess: (guess: string) => Promise<{ correct: boolean; points: number; error?: string }>;
+  exploreLocation: () => Promise<{ success: boolean; points: number; streakPreserved: boolean; error?: string }>;
   resetGame: () => void;
   refreshChallenge: () => void;
+  refreshStats: () => Promise<void>;
   isLoading: boolean;
   canPlay: boolean;
   lastMapDistance?: number | null;
@@ -80,7 +82,8 @@ function getChallengeForDate(date: Date): DailyChallenge {
   
   // For testing, use current time in milliseconds to get different locations more often
   const now = new Date();
-  const seed = parseInt(format(date, 'yyyyMMdd')) + Math.floor(now.getTime() / (1000 * 60 * 5)); // Change every 5 minutes for testing
+  // TEST MODE: Change location every 30 seconds for rapid testing
+  const seed = parseInt(format(date, 'yyyyMMdd')) + Math.floor(now.getTime() / (1000 * 30)); // Change every 30 seconds
   const locationIndex = Math.abs(seed) % locationsWithModels.length;
   const location = locationsWithModels[locationIndex];
   
@@ -124,6 +127,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [canPlay, setCanPlay] = useState<boolean>(true);
   const [lastMapDistance, setLastMapDistance] = useState<number | null>(null);
   const [mapView, setMapView] = useState<{ center: [number, number]; zoom: number } | null>(null);
+
+  // Test mode detection
+  const isTestMode = process.env.NODE_ENV === 'development' || window.location.search.includes('test=true');
+  
+  // Debug test mode
+  console.log('🔧 TEST MODE DEBUG:');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('URL search:', window.location.search);
+  console.log('Is Test Mode:', isTestMode);
 
   // Load today's challenge from backend (which now uses locations.ts)
   useEffect(() => {
@@ -178,10 +190,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
             // Fallback to local challenge generation from locations.ts
             setTodayChallenge(getChallengeForDate(new Date()));
             
-            // Check localStorage for daily restriction
-            const today = format(new Date(), 'yyyy-MM-dd');
-            const lastPlayedDate = localStorage.getItem('lastPlayedDate');
-            setCanPlay(lastPlayedDate !== today);
+            if (!isTestMode) {
+              // Check localStorage for daily restriction in production only
+              const today = format(new Date(), 'yyyy-MM-dd');
+              const lastPlayedDate = localStorage.getItem('lastPlayedDate');
+              setCanPlay(lastPlayedDate !== today);
+            } else {
+              console.log('🧪 TEST MODE: Multiple plays allowed');
+              setCanPlay(true);
+            }
           }
         } else {
           // Not authenticated, use local challenge generation
@@ -245,12 +262,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (user) {
         try {
           const session = await supabase.auth.getSession();
+          
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.data.session?.access_token}`
+          };
+          
+          if (isTestMode) {
+            headers['x-test-mode'] = 'true';
+            console.log('🧪 Sending test mode header');
+          }
+          
           const response = await fetch('http://localhost:3001/api/challenges/submit', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.data.session?.access_token}`
-            },
+            headers,
             body: JSON.stringify({ guess })
           });
 
@@ -258,20 +283,33 @@ export function GameProvider({ children }: { children: ReactNode }) {
             const result = await response.json();
             
             if (result.success) {
-              const { correct, points_earned } = result.data;
+              const { correct, points_earned, user_stats } = result.data;
               
-              console.log('✅ BACKEND SUBMISSION SUCCESS:', { correct, points_earned });
+              console.log('✅ BACKEND SUBMISSION SUCCESS:', { correct, points_earned, user_stats });
               
-              // Update local state
+              // Update local state with actual backend data for consistency
               setGameState(prev => ({
                 ...prev,
                 todayCompleted: true,
                 todayCorrect: correct,
-                totalPoints: prev.totalPoints + points_earned,
+                // Use backend stats for consistency across all pages
+                totalPoints: user_stats.total_points,
+                currentStreak: user_stats.current_streak,
+                bestStreak: user_stats.best_streak,
               }));
               
-              // Mark that user can't play again today
-              setCanPlay(false);
+              // In test mode, reset canPlay immediately to allow another attempt
+              if (isTestMode) {
+                console.log('🧪 TEST MODE: Resetting canPlay immediately for next attempt');
+                setCanPlay(true);
+                // Force refresh challenge for new location
+                setTimeout(() => {
+                  setTodayChallenge(getChallengeForDate(new Date()));
+                }, 100);
+              } else {
+                // Mark that user can't play again today
+                setCanPlay(false);
+              }
               
               return { correct, points: points_earned };
             }
@@ -354,12 +392,144 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setTodayChallenge(getChallengeForDate(new Date()));
   };
 
+  const exploreLocation = async (): Promise<{ success: boolean; points: number; streakPreserved: boolean; error?: string }> => {
+    if (!canPlay) {
+      return { success: false, points: 0, streakPreserved: false, error: 'You have already played today. Come back tomorrow!' };
+    }
+
+    try {
+      console.log('🧭 FRONTEND: Calling explore endpoint');
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return { success: false, points: 0, streakPreserved: false, error: 'Please log in to explore locations' };
+      }
+
+      // Try backend first
+      try {
+        const session = await supabase.auth.getSession();
+        
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.data.session?.access_token}`
+        };
+        
+        if (isTestMode) {
+          headers['x-test-mode'] = 'true';
+        }
+        
+        const response = await fetch('http://localhost:3001/api/challenges/explore', {
+          method: 'POST',
+          headers
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (result.success) {
+            const { points_earned, streak_preserved, new_streak, user_stats } = result.data;
+            
+            console.log('✅ BACKEND EXPLORE SUCCESS:', { points_earned, streak_preserved, new_streak, user_stats });
+            
+            // Update local state with backend stats for consistency
+            setGameState(prev => ({
+              ...prev,
+              todayCompleted: true,
+              todayCorrect: false, // They explored, didn't guess correctly
+              totalPoints: user_stats.total_points,
+              currentStreak: user_stats.current_streak,
+              bestStreak: user_stats.best_streak,
+            }));
+            
+            // In test mode, reset canPlay immediately
+            if (isTestMode) {
+              console.log('🧪 TEST MODE: Resetting canPlay immediately after explore');
+              setCanPlay(true);
+              setTimeout(() => {
+                setTodayChallenge(getChallengeForDate(new Date()));
+              }, 100);
+            } else {
+              // Mark that user can't play again today
+              setCanPlay(false);
+            }
+            
+            return { success: true, points: points_earned, streakPreserved: streak_preserved };
+          }
+        } else {
+          const errorData = await response.json();
+          if (response.status === 400) {
+            return { success: false, points: 0, streakPreserved: false, error: errorData.error || 'Already played today' };
+          }
+          throw new Error('Backend explore failed');
+        }
+      } catch (backendError) {
+        console.log('💻 Backend explore failed, using local fallback');
+      }
+      
+      // Fallback to local handling
+      console.log('🏠 LOCAL EXPLORE FALLBACK');
+      
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const explorePoints = 25;
+      
+      // Update local state
+      setGameState(prev => {
+        // When exploring locally, preserve the streak (user gets benefit of the doubt)
+        const newStreak = Math.max(prev.currentStreak, 1); // At least maintain current streak
+        return {
+          ...prev,
+          todayCompleted: true,
+          todayCorrect: false,
+          totalPoints: prev.totalPoints + explorePoints,
+          currentStreak: newStreak,
+          lastPlayedDate: today,
+        };
+      });
+      
+      // Mark as played today in localStorage
+      localStorage.setItem('lastPlayedDate', today);
+      
+      // Mark that user can't play again today
+      setCanPlay(false);
+      
+      console.log('🧭 LOCAL EXPLORE: Points earned:', explorePoints);
+      
+      return { success: true, points: explorePoints, streakPreserved: true };
+    } catch (error) {
+      console.error('Error exploring location:', error);
+      return { success: false, points: 0, streakPreserved: false, error: 'Failed to explore location. Please try again.' };
+    }
+  };
+
   const refreshChallenge = () => {
     // Force regenerate today's challenge - useful for testing
     console.log('🔄 REFRESHING CHALLENGE - This will generate a new challenge!');
     const newChallenge = getChallengeForDate(new Date());
     setTodayChallenge(newChallenge);
     console.log('🎯 NEW CHALLENGE GENERATED:', newChallenge);
+  };
+
+  const refreshStats = async (): Promise<void> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const response = await fetch(`http://localhost:3001/api/users/${user.id}/stats`);
+      if (response.ok) {
+        const stats = await response.json();
+        console.log('📊 Refreshed stats from backend:', stats);
+        
+        setGameState(prev => ({
+          ...prev,
+          totalPoints: stats.total_points || 0,
+          currentStreak: stats.current_streak || 0,
+          bestStreak: stats.best_streak || 0
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to refresh stats:', error);
+    }
   };
 
   return (
@@ -369,8 +539,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         todayChallenge,
         startChallenge,
         submitGuess,
+        exploreLocation,
         resetGame,
         refreshChallenge,
+        refreshStats,
         isLoading,
         canPlay,
         lastMapDistance,

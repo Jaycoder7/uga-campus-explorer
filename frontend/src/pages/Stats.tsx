@@ -1,78 +1,45 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Star, Flame, Trophy, MapPin } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { useGame } from '@/context/GameContext';
 
 
 export default function Stats() {
-  const [statsData, setStatsData] = useState(null);
+  const { gameState, refreshStats, isLoading } = useGame();
 
+  // Refresh stats when component mounts to ensure we have latest data
   useEffect(() => {
-    async function fetchUserStats() {
-      try {
-        // Get currently logged-in user
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        console.log("Current user:", user);
-        if (!user) return;
-
-        // Fetch stats from backend
-        const res = await fetch(`http://localhost:3001/api/users/${user.id}/stats`);
-        const data = await res.json();
-
-        // Fallback in case backend returns nothing
-        const fallbackData = {
-          total_points: 0,
-          current_streak: 0,
-          best_streak: 0,
-          total_locations: 0,
-        };
-
-        setStatsData(data || fallbackData);
-      } catch (err) {
-        console.error("Failed to fetch user stats", err);
-        // Optional: set fallback if fetch fails
-        setStatsData({
-          total_points: 0,
-          current_streak: 0,
-          best_streak: 0,
-          total_locations: 0,
-        });
-      }
-    }
-
-    fetchUserStats();
+    refreshStats();
   }, []);
 
-  if (!statsData) return <PageLayout title="Your Progress">Loading...</PageLayout>;
+  if (isLoading) return <PageLayout title="Your Progress">Loading...</PageLayout>;
 
   const stats = [
     {
       icon: Star,
       label: 'Total Points',
-      value: statsData.total_points.toLocaleString(),
+      value: gameState.totalPoints.toLocaleString(),
       color: 'text-primary',
       bg: 'bg-primary/20',
     },
     {
       icon: Flame,
       label: 'Current Streak',
-      value: statsData.current_streak,
+      value: gameState.currentStreak,
       color: 'text-warning',
       bg: 'bg-warning/20',
     },
     {
       icon: Trophy,
       label: 'Best Streak',
-      value: statsData.best_streak,
+      value: gameState.bestStreak,
       color: 'text-success',
       bg: 'bg-success/20',
     },
     {
       icon: MapPin,
       label: 'Locations',
-      value: `${statsData.total_locations}/50`,
+      value: `${gameState.discoveredLocations.length}/50`,
       color: 'text-accent-foreground',
       bg: 'bg-accent',
     },
