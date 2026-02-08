@@ -1,8 +1,7 @@
 # UGA Campus Explorer
 ## Project info about hackathon
 
-A complete location-based campus discovery game for the University of Georgia. Players explore campus by solving daily location challenges, discovering landmarks, and unlocking achievements.
-
+A complete location-based campus discovery game for the University of Georgia. Players explore campus by solving daily location challenges to discover landmarks.
 ## 📁 Project Structure
 
 ```
@@ -37,8 +36,7 @@ Ricky
 ## 💡 Purpose of Project
 UGA Campus Explorer is a gamified tool built for the UGA community. While thousands of students walk through the Arch every day, many remain "strangers" to the rich history and essential resources of our campus.
 
-Our app provides a **Daily 360° Challenge** where students must identify their location on campus. By turning geography into a shared daily ritual, we build a community of Bulldogs who experienced campus, more connected, and better neighbors.
-
+Our app provides a **Daily 360° Challenge** where students must identify their location on campus. By turning geography into a shared daily ritual, we build a community of Bulldawgs who experienced campus, more connected, and better neighbors.
 
 
 ## 🚀 Quick Start
@@ -173,46 +171,6 @@ Our app provides a **Daily 360° Challenge** where students must identify their 
 - Row Level Security in database
 - Environment variable protection
 
-## 🚀 Deployment
-
-### Frontend Deployment
-The frontend can be deployed to:
-- Vercel (recommended for React apps)
-- Netlify
-- GitHub Pages
-- Any static hosting service
-
-### Backend Deployment
-The backend can be deployed to:
-- Railway
-- Heroku
-- DigitalOcean App Platform
-- AWS EC2
-- Any Node.js hosting service
-
-### Environment Setup
-1. Set up production environment variables
-2. Configure Supabase for production
-3. Set up proper CORS origins
-4. Configure rate limiting for production load
-5. Set up monitoring and logging
-
-## 🧪 Testing
-
-Run tests for the entire project:
-```bash
-npm test
-```
-
-Or run tests individually:
-```bash
-# Frontend tests
-cd frontend && npm test
-
-# Backend tests (when implemented)
-cd backend && npm test
-```
-
 ## 📖 API Documentation
 
 The backend provides a comprehensive REST API. Key endpoints include:
@@ -222,36 +180,23 @@ The backend provides a comprehensive REST API. Key endpoints include:
 - `GET /api/challenges/today` - Get today's challenge
 - `POST /api/challenges/submit` - Submit challenge answer
 - `GET /api/leaderboard` - Get leaderboard
-- `GET /api/achievements` - Get all achievements
 - `GET /api/locations` - Get all locations
 
-Full API documentation is available in `/backend/README.md`.
 
-## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
-
-For support:
-1. Check existing GitHub issues
-2. Create a new issue with detailed information
-3. Include error logs and environment details
-
 ## 🙏 Acknowledgments
 
 - University of Georgia for inspiration
+- StateFarm for being a good neighbor
 - Supabase for excellent backend-as-a-service
 - React and Node.js communities
 - All contributors and testers
+- 
 
 ---
 
