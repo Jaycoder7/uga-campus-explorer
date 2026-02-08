@@ -13,7 +13,7 @@ export const UGA_LOCATIONS: Location[] = [
     name: 'Georgia Museum of Art',
     buildingCode: 'ART',
     category: 'cultural',
-    coordinates: { lat: 33.94114018973817, lng: -83.36980687052316 },
+    coordinates: { lat: 33.94121637848622, lng: -83.36971648623496 },
     imageUrl: '/placeholder.svg',
     funFact: 'The Georgia Museum of Art is the official art museum of the state of Georgia and houses over 10,000 works.',
     yearBuilt: 1996,

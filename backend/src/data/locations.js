@@ -25,7 +25,7 @@ const UGA_LOCATIONS = [
     id: 'loc-023',
     name: 'Hardman Hall',
     category: 'academic',
-    coordinates: { lat: 33.944849320655884, lng: -83.37389215911904 },
+    coordinates: { lat: 33.94121637848622, lng: -83.36971648623496 },
     imageUrl: '/placeholder.svg',
     funFact: 'Hardman Hall is a historic academic building known for its distinctive green lawn and classical architecture.',
     yearBuilt: 1920,
@@ -66,7 +66,10 @@ function getChallengeForDate(date) {
   }
   
   // Use date only for consistent daily challenge (same challenge all day)
-  const seed = parseInt(dateStr.replace(/-/g, ''));
+  c// For testing, use current time in milliseconds to get different locations more often
+  const now = new Date();
+  // TEST MODE: Change location every 30 seconds for rapid testing
+  const seed = parseInt(dateStr.replace(/-/g, '')) + Math.floor(now.getTime() / (1000 * 300)); // Change every 30 seconds
   const locationIndex = Math.abs(seed) % locationsWithModels.length;
   const location = locationsWithModels[locationIndex];
   
