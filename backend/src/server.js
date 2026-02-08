@@ -16,6 +16,7 @@ const challengeRoutes = require('./routes/challenges');
 const userRoutes = require('./routes/users');
 const leaderboardRoutes = require('./routes/leaderboard');
 const locationRoutes = require('./routes/locations');
+const storyRoutes = require('./routes/storyRoutes');
 
 // Import utilities
 const { initializeDatabase, checkDatabaseHealth } = require('./utils/initDatabase');
@@ -90,6 +91,7 @@ app.use('/api/challenges', challengeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/locations', locationRoutes);
+app.use("/generate-story", storyRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

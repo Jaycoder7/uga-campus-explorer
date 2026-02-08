@@ -8,12 +8,13 @@ import { Navigation } from "@/components/layout/Navigation";
 import AuthGuard from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
 import Stats from "./pages/Stats";
-import Explore from "./pages/Explore";
+import Explore from "./pages/Magic";
 import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup"; 
 import HowToPlay from "./pages/HowToPlay";
 import NotFound from "./pages/NotFound";
+import Magic from "./pages/Magic";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +32,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/how-to-play" element={<HowToPlay />} />
-            <Route path="/explore" element={<Explore />} />
+            <Route path="/magic" element={<Magic />} />
 
             {/* Protected routes */}
             <Route path="/stats" element={<AuthGuard><Stats /></AuthGuard>} />

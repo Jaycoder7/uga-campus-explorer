@@ -57,6 +57,7 @@
   },
   "homepage": "https://github.com/yourusername/uga-campus-explorer#readme",
   "dependencies": {
+    "@google/genai": "^1.40.0",
     "@tanstack/react-table": "^8.21.3"
   }
 }

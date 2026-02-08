@@ -18,7 +18,7 @@ export default function Stats() {
         if (!user) return;
 
         // Fetch stats from backend
-        const res = await fetch(`http://localhost:3001/api/users/${user.id}/stats`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${user.id}/stats`);
         const data = await res.json();
 
         // Fallback in case backend returns nothing
