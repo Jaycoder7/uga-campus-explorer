@@ -33,7 +33,7 @@ export const UGA_LOCATIONS: Location[] = [
     id: 'loc-023',
     name: 'Hardman Hall',
     category: 'academic',
-    coordinates: { lat: 33.94584, lng: -83.37392 },
+    coordinates: { lat: 33.945045807002494, lng: -83.37482425551508 },
     imageUrl: '/placeholder.svg',
     funFact: 'Hardman Hall is a historic academic building known for its distinctive green lawn and classical architecture.',
     yearBuilt: 1920,
