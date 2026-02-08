@@ -9,6 +9,41 @@ export default function Stats() {
 
   // Refresh stats when component mounts to ensure we have latest data
   useEffect(() => {
+    async function fetchUserStats() {
+      try {
+        // Get currently logged-in user
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        console.log("Current user:", user);
+        if (!user) return;
+
+        // Fetch stats from backend
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${user.id}/stats`);
+        const data = await res.json();
+
+        // Fallback in case backend returns nothing
+        const fallbackData = {
+          total_points: 0,
+          current_streak: 0,
+          best_streak: 0,
+          total_locations: 0,
+        };
+
+        setStatsData(data || fallbackData);
+      } catch (err) {
+        console.error("Failed to fetch user stats", err);
+        // Optional: set fallback if fetch fails
+        setStatsData({
+          total_points: 0,
+          current_streak: 0,
+          best_streak: 0,
+          total_locations: 0,
+        });
+      }
+    }
+
+    fetchUserStats();
     refreshStats();
   }, []);
 

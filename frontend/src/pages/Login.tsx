@@ -41,7 +41,7 @@ export default function Login() {
 
         console.log("Login successful, syncing user data...")
 
-        await fetchWithAuth("http://localhost:3001/api/users/sync", {
+        await fetchWithAuth(`${import.meta.env.VITE_API_URL}/api/users/sync`, {
             method: "POST",
         })
 

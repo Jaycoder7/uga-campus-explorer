@@ -17,7 +17,7 @@ export default function Leaderboard() {
   useEffect(() => {
     async function fetchPointsLeaderboard() {
       try {
-        const res = await fetch("http://localhost:3001/api/leaderboard/topPoints");
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leaderboard/topPoints`);
         const data = await res.json();
         setPointsPlayers(data.users || fallbackPlayers);
       } catch (err) {
@@ -27,7 +27,7 @@ export default function Leaderboard() {
 
     async function fetchStreakLeaderboard() {
       try {
-        const res = await fetch("http://localhost:3001/api/leaderboard/topStreak");
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leaderboard/topStreak`);
         const data = await res.json();
         setStreakPlayers(data.users || fallbackPlayers);
       } catch (err) {
