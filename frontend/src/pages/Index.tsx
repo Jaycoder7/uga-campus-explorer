@@ -120,10 +120,10 @@ export default function Index() {
       {/* Header */}
       <div className="mb-6 text-center">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
-          UGA Campus Explorer
+          BullDawg Boundaries
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Discover campus one location at a time
+        <p className="mt-1 text-base text-muted-foreground">
+         Like a good neighbor, BDB is there!
         </p>
       </div>
 
