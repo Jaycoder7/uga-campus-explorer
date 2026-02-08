@@ -19,7 +19,11 @@ function GLBModel({ url, position, scale = 1, rotation }: {
   scale?: number | [number, number, number];
   rotation?: [number, number, number];
 }) {
+  console.log('🎨 LOADING 3D MODEL:', url);
+  
   const { scene } = useGLTF(url);
+  
+  console.log('✅ 3D MODEL LOADED:', url);
   
   return (
     <primitive 
@@ -36,6 +40,11 @@ export function Scene3D({ locationId, zoom = 1 }: Scene3DProps) {
   const modelPath = locationId && LOCATION_MODELS[locationId] 
     ? LOCATION_MODELS[locationId] 
     : '/models/TurtlePond.glb';
+
+  console.log('🎭 SCENE3D DEBUG:');
+  console.log('Location ID:', locationId);
+  console.log('Model path:', modelPath);
+  console.log('Available models:', LOCATION_MODELS);
 
   return (
     <div style={{ width: '100%', height: '100%', margin: 0, padding: 0, overflow: 'hidden', position: 'relative' }}>

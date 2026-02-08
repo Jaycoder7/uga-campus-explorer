@@ -5,10 +5,10 @@ import { useGame } from '@/context/GameContext';
 import { Scene3D } from './Scene3D';
 
 interface ChallengeImageProps {
-  onGuess: () => void;
+  onMapGuess: () => void;
 }
 
-export function ChallengeImage({ onGuess }: ChallengeImageProps) {
+export function ChallengeImage({ onMapGuess }: ChallengeImageProps) {
   const { todayChallenge, refreshChallenge } = useGame();
   const [zoom, setZoom] = useState(1.5);
   const [showHint, setShowHint] = useState(false);
@@ -137,12 +137,12 @@ export function ChallengeImage({ onGuess }: ChallengeImageProps) {
       {/* Action Buttons */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button
-          onClick={onGuess}
+          onClick={onMapGuess}
           className="flex-1 bg-success text-success-foreground hover:bg-success/90"
           size="lg"
         >
           <MapPin className="mr-2 h-5 w-5" />
-          I know this place!
+          Select Location on Map
         </Button>
         
         {hintAvailable && !showHint ? (

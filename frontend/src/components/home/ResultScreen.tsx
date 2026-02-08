@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { Check, X, Flame, MapPin, Navigation, ExternalLink, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGame } from '@/context/GameContext';
-import { fetchWithAuth } from '@/lib/apiClient';
-import MapPicker from '@/components/ui/MapPicker';
 import { UGA_LOCATIONS } from '@/data/locations';
 
 type Coords = { lng: number; lat: number }
@@ -25,31 +23,17 @@ function haversine(a: Coords, b: Coords) {
 interface ResultScreenProps {
   correct: boolean;
   pointsEarned: number;
+  error?: string;
 }
 
-export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
-  const { gameState, todayChallenge, submitGuess, lastMapDistance, setLastMapDistance } = useGame();
+export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps) {
+  const { gameState, todayChallenge, lastMapDistance } = useGame();
   const [showDirections, setShowDirections] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [displayCorrect, setDisplayCorrect] = useState<boolean>(correct);
-  const [displayPoints, setDisplayPoints] = useState<number>(pointsEarned);
   const [showExplore, setShowExplore] = useState(false);
   const [userDistance, setUserDistance] = useState<number | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [showLocationMap, setShowLocationMap] = useState(false);
 
-  useEffect(() => {
-    setDisplayCorrect(correct)
-    setDisplayPoints(pointsEarned)
-  }, [correct, pointsEarned])
-
-  // clear the lastMapDistance after showing it once
-  useEffect(() => {
-    if (lastMapDistance != null && setLastMapDistance) {
-      const t = setTimeout(() => setLastMapDistance(null), 5000)
-      return () => clearTimeout(t)
-    }
-  }, [lastMapDistance, setLastMapDistance])
 
   const handleExplore = () => {
     setLoadingLocation(true)
@@ -60,7 +44,20 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
             lng: position.coords.longitude,
             lat: position.coords.latitude
           }
-          const distance = haversine(userCoords, todayChallenge.coordinates)
+          
+          // Find the correct location from locations.ts
+          const correctLocation = UGA_LOCATIONS.find(loc => loc.id === todayChallenge?.location);
+          if (!correctLocation) {
+            alert('Location data not found');
+            setLoadingLocation(false);
+            return;
+          }
+          
+          const targetCoords = {
+            lng: correctLocation.coordinates.lng,
+            lat: correctLocation.coordinates.lat
+          }
+          const distance = haversine(userCoords, targetCoords)
           setUserDistance(distance)
           setShowExplore(true)
           setLoadingLocation(false)
@@ -83,7 +80,15 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
     <div className="animate-scale-in space-y-6">
       {/* Result Header */}
       <div className="rounded-2xl bg-card p-6 text-center shadow-card">
-        {correct ? (
+        {error ? (
+          <>
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-destructive/20">
+              <X className="h-10 w-10 text-destructive" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground">Oops! 😕</h2>
+            <p className="mt-2 text-destructive">{error}</p>
+          </>
+        ) : correct ? (
           <>
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-success/20">
               <Check className="h-10 w-10 text-success" />
@@ -109,7 +114,7 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
       </div>
 
       {/* Location Reveal */}
-      <div className="rounded-2xl bg-card p-6 shadow-card">
+      {!error && <div className="rounded-2xl bg-card p-6 shadow-card">
         <div className="flex items-center gap-2 text-primary">
           <MapPin className="h-5 w-5" />
           <span className="text-sm font-medium uppercase tracking-wider">
@@ -150,10 +155,10 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
             View Location on Map
           </Button>
         </div>
-      </div>
+      </div>}
 
       {/* Directions (for incorrect answers) */}
-      {!correct && (
+      {!error && !correct && (
         <div className="rounded-2xl bg-card shadow-card">
           <button
             onClick={() => setShowDirections(!showDirections)}
@@ -207,14 +212,6 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
           )}
           <div className="px-6 pb-6">
             <Button
-              variant="ghost"
-              className="mt-2 w-full"
-              onClick={() => setShowMap(true)}
-            >
-              <MapPin className="mr-2 h-4 w-4" />
-              Try Again (Select on Map)
-            </Button>
-            <Button
               variant="outline"
               className="mt-2 w-full"
               onClick={handleExplore}
@@ -227,33 +224,9 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
         </div>
       )}
 
-      <MapPicker
-        isOpen={Boolean(showMap)}
-        initial={undefined}
-        onClose={() => setShowMap(false)}
-        onSelect={(c) => {
-          // enforce 500 ft radius from the true location
-          const radiusMeters = 152.4
-          const distToAnswer = haversine({ lng: c.lng, lat: c.lat }, { lng: todayChallenge.coordinates.lng, lat: todayChallenge.coordinates.lat })
-          if (distToAnswer <= radiusMeters) {
-            const result = submitGuess(todayChallenge.locationName)
-            setShowMap(false)
-            // update local display state to show the correct result without a popup
-            setDisplayCorrect(result.correct)
-            setDisplayPoints(result.points)
-          } else {
-            // record the distance FIRST before submitting wrong guess
-            setLastMapDistance(distToAnswer)
-            setShowMap(false)
-            submitGuess('')
-            setDisplayCorrect(false)
-            setDisplayPoints(0)
-          }
-        }}
-      />
 
       {/* Share Button */}
-      <Button
+      {!error && <Button
         variant="outline"
         className="w-full"
         onClick={() => {
@@ -263,7 +236,7 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
       >
         <Share2 className="mr-2 h-4 w-4" />
         Share Result
-      </Button>
+      </Button>}
 
       {/* Explore Modal */}
       {showExplore && userDistance !== null && (

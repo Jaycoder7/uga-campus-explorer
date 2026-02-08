@@ -1,6 +1,7 @@
 const { supabaseAdmin } = require('../config/supabase');
 const { AppError } = require('../middleware/errorHandler');
 const { format, startOfDay, isAfter, differenceInDays } = require('date-fns');
+const { UGA_LOCATIONS, getChallengeForDate } = require('../data/locations');
 
 // Achievement system removed - only points and streaks are tracked
 
@@ -25,82 +26,58 @@ const calculatePoints = (isCorrect, isFirstDiscovery, currentStreak) => {
 
 const getTodayChallenge = async (req, res, next) => {
   try {
-    const today = format(new Date(), 'yyyy-MM-dd');
+    console.log('🎯 BACKEND: Getting today\'s challenge from locations.js');
+    
+    let canPlay = true;
+    let hasRevealed = false;
+    let userAttempt = null;
 
-    // Get today's challenge
-    const { data: challenge, error: challengeError } = await supabaseAdmin
-      .from('daily_challenges')
-      .select(`
-        *,
-        locations (
-          id,
-          category,
-          latitude,
-          longitude,
-          image_url,
-          year_built
-        )
-      `)
-      .eq('challenge_date', today)
-      .single();
+    // Check if user already played today based on last_played_date
+    if (req.user && req.user.last_played_date) {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const lastPlayedDate = format(new Date(req.user.last_played_date), 'yyyy-MM-dd');
+      canPlay = lastPlayedDate !== today;
+      hasRevealed = !canPlay; // If they can't play, they've already attempted
+    }
 
-    if (challengeError || !challenge) {
+    // Generate today's challenge from locations.js
+    const challenge = getChallengeForDate(new Date());
+    
+    // Find the location details from our locations data
+    const location = UGA_LOCATIONS.find(loc => loc.id === challenge.location);
+    
+    if (!location) {
       return res.status(404).json({
         success: false,
-        error: 'No challenge found for today'
+        error: 'Location not found in data'
       });
     }
 
-    let userAttempt = null;
-    let hasRevealed = false;
+    console.log('✅ BACKEND: Generated challenge for location:', location.name);
 
-    // If user is authenticated, check if they've attempted today's challenge
-    if (req.user) {
-      const { data: attempt } = await supabaseAdmin
-        .from('challenge_attempts')
-        .select('*')
-        .eq('user_id', req.user.id)
-        .eq('challenge_id', challenge.id)
-        .single();
-
-      userAttempt = attempt;
-      hasRevealed = !!attempt;
-    }
-
-    // Prepare response (hide location name unless attempted)
+    // Prepare response
     const responseData = {
       id: challenge.id,
-      challenge_date: challenge.challenge_date,
+      challenge_date: challenge.date,
       hint: challenge.hint,
       directions: challenge.directions,
       location: {
-        id: challenge.locations.id,
-        category: challenge.locations.category,
-        latitude: challenge.locations.latitude,
-        longitude: challenge.locations.longitude,
-        image_url: challenge.locations.image_url,
-        year_built: challenge.locations.year_built
+        id: location.id,
+        category: location.category,
+        latitude: location.coordinates.lat,
+        longitude: location.coordinates.lng,
+        image_url: location.imageUrl,
+        year_built: location.yearBuilt,
+        // Include location details if user has attempted or for local testing
+        name: location.name,
+        fun_fact: location.funFact,
+        building_code: location.buildingCode,
+        aliases: location.aliases
       },
       attempted: hasRevealed,
-      user_attempt: userAttempt
+      user_attempt: userAttempt,
+      can_play: canPlay
     };
-
-    // Only include location name if user has attempted
-    if (hasRevealed) {
-      const { data: fullLocation } = await supabaseAdmin
-        .from('locations')
-        .select('name, fun_fact, building_code, aliases')
-        .eq('id', challenge.locations.id)
-        .single();
-
-      responseData.location = {
-        ...responseData.location,
-        name: fullLocation.name,
-        fun_fact: fullLocation.fun_fact,
-        building_code: fullLocation.building_code,
-        aliases: fullLocation.aliases
-      };
-    }
 
     res.status(200).json({
       success: true,
@@ -108,6 +85,7 @@ const getTodayChallenge = async (req, res, next) => {
     });
 
   } catch (error) {
+    console.error('❌ Error in getTodayChallenge:', error);
     next(error);
   }
 };
@@ -117,88 +95,59 @@ const submitGuess = async (req, res, next) => {
     const { guess } = req.body;
     const today = format(new Date(), 'yyyy-MM-dd');
 
-    // Get today's challenge
-    const { data: challenge, error: challengeError } = await supabaseAdmin
-      .from('daily_challenges')
-      .select(`
-        *,
-        locations (
-          id,
-          name,
-          building_code,
-          aliases,
-          fun_fact
-        )
-      `)
-      .eq('challenge_date', today)
-      .single();
+    console.log('🎯 BACKEND: Submit guess from locations.js');
+    console.log('Guess:', guess);
 
-    if (challengeError || !challenge) {
+    // Check if user already played today based on last_played_date
+    if (req.user.last_played_date) {
+      const lastPlayedDate = format(new Date(req.user.last_played_date), 'yyyy-MM-dd');
+      if (lastPlayedDate === today) {
+        return res.status(400).json({
+          success: false,
+          error: 'You have already played today. Come back tomorrow!'
+        });
+      }
+    }
+
+    // Get today's challenge from locations.js
+    const challenge = getChallengeForDate(new Date());
+    
+    // Find the location details from our locations data
+    const location = UGA_LOCATIONS.find(loc => loc.id === challenge.location);
+    
+    if (!location) {
       return res.status(404).json({
         success: false,
-        error: 'No challenge found for today'
+        error: 'Location not found in data'
       });
     }
 
-    // Check if user already attempted today's challenge
-    const { data: existingAttempt } = await supabaseAdmin
-      .from('challenge_attempts')
-      .select('*')
-      .eq('user_id', req.user.id)
-      .eq('challenge_id', challenge.id)
-      .single();
-
-    if (existingAttempt) {
-      return res.status(400).json({
-        success: false,
-        error: 'You have already attempted today\'s challenge'
-      });
-    }
+    console.log('✅ BACKEND: Challenge location:', location.name);
 
     // Check if guess is correct
-    const location = challenge.locations;
     const normalizedGuess = guess.toLowerCase().trim();
     const isCorrect = 
       location.name.toLowerCase() === normalizedGuess ||
-      location.building_code?.toLowerCase() === normalizedGuess ||
+      (location.buildingCode && location.buildingCode.toLowerCase() === normalizedGuess) ||
       location.aliases.some(alias => alias.toLowerCase() === normalizedGuess);
 
+    console.log('✅ BACKEND: Is correct?', isCorrect);
+
     let pointsEarned = 0;
-    let isFirstDiscovery = false;
 
     if (isCorrect) {
-      // Check if this is the first discovery of this location
-      const { data: existingDiscovery } = await supabaseAdmin
-        .from('user_locations')
-        .select('id')
-        .eq('user_id', req.user.id)
-        .eq('location_id', location.id)
-        .single();
-
-      isFirstDiscovery = !existingDiscovery;
-
-      if (isFirstDiscovery) {
-        // Record location discovery
-        await supabaseAdmin
-          .from('user_locations')
-          .insert({
-            user_id: req.user.id,
-            location_id: location.id
-          });
-      }
-
       // Calculate streak
       const lastPlayedDate = req.user.last_played_date 
         ? new Date(req.user.last_played_date)
         : null;
       
-      const today = startOfDay(new Date());
-      let newStreak = req.user.current_streak;
+      const todayDate = startOfDay(new Date());
+      let newStreak = req.user.current_streak || 0;
 
       if (!lastPlayedDate) {
         newStreak = 1;
       } else {
-        const daysDiff = differenceInDays(today, startOfDay(lastPlayedDate));
+        const daysDiff = differenceInDays(todayDate, startOfDay(lastPlayedDate));
         if (daysDiff === 1) {
           newStreak += 1;
         } else if (daysDiff > 1) {
@@ -206,12 +155,12 @@ const submitGuess = async (req, res, next) => {
         }
       }
 
-      // Calculate points
-      pointsEarned = calculatePoints(true, isFirstDiscovery, newStreak);
+      // Calculate points - simplified version
+      pointsEarned = 100; // Base points for correct guess
 
       // Update user stats
-      const newBestStreak = Math.max(req.user.best_streak, newStreak);
-      const newTotalPoints = req.user.total_points + pointsEarned;
+      const newBestStreak = Math.max(req.user.best_streak || 0, newStreak);
+      const newTotalPoints = (req.user.total_points || 0) + pointsEarned;
 
       await supabaseAdmin
         .from('users')
@@ -219,61 +168,38 @@ const submitGuess = async (req, res, next) => {
           current_streak: newStreak,
           best_streak: newBestStreak,
           total_points: newTotalPoints,
-          last_played_date: today.toISOString()
+          last_played_date: todayDate.toISOString()
         })
         .eq('id', req.user.id);
 
-      // Update user object for achievement checking
-      req.user.current_streak = newStreak;
-      req.user.total_points = newTotalPoints;
-
     } else {
-      // Incorrect guess - reset streak if user has played before
-      if (req.user.last_played_date) {
-        await supabaseAdmin
-          .from('users')
-          .update({
-            current_streak: 0,
-            last_played_date: new Date().toISOString()
-          })
-          .eq('id', req.user.id);
-      }
+      // Incorrect guess - update last played date and reset streak
+      await supabaseAdmin
+        .from('users')
+        .update({
+          current_streak: 0,
+          last_played_date: new Date().toISOString()
+        })
+        .eq('id', req.user.id);
     }
 
-    // Record the attempt
-    const { data: attempt, error: attemptError } = await supabaseAdmin
-      .from('challenge_attempts')
-      .insert({
-        user_id: req.user.id,
-        challenge_id: challenge.id,
-        guess,
-        correct: isCorrect,
-        points_earned: pointsEarned
-      })
-      .select()
-      .single();
-
-    if (attemptError) {
-      throw new AppError('Failed to record challenge attempt', 500);
-    }
-
-    // Achievement system removed - only points and streaks are tracked
+    console.log('📊 BACKEND: Points earned:', pointsEarned);
 
     res.status(200).json({
       success: true,
       data: {
         correct: isCorrect,
         points_earned: pointsEarned,
-        first_discovery: isFirstDiscovery,
+        first_discovery: isCorrect, // Simplified for now
         location: {
           name: location.name,
-          fun_fact: location.fun_fact
-        },
-        attempt
+          fun_fact: location.funFact
+        }
       }
     });
 
   } catch (error) {
+    console.error('❌ BACKEND Error in submitGuess:', error);
     next(error);
   }
 };
