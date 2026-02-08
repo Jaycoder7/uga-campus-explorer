@@ -65,7 +65,7 @@ export default function MapPicker({ isOpen, initial, onClose, onSelect }: Props)
 
     mapRef.current = map
 
-    const onMapClick = (e: maplibregl.MapMouseEvent) => {
+    const onMapClick = (e: any) => {
       const lng = Number(e.lngLat.lng)
       const lat = Number(e.lngLat.lat)
       setCoords({ lng, lat })
