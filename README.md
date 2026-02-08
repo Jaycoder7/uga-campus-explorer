@@ -29,6 +29,17 @@ uga-campus-explorer/
 ├── package.json            # Root package.json for monorepo
 └── README.md               # This file
 ```
+## 👥 Team
+Dhaval
+Jyotil
+Ricky
+
+## 💡 Purpose of Project
+UGA Campus Explorer is a gamified tool built for the UGA community. While thousands of students walk through the Arch every day, many remain "strangers" to the rich history and essential resources of our campus.
+
+Our app provides a **Daily 360° Challenge** where students must identify their location on campus. By turning geography into a shared daily ritual, we build a community of Bulldogs who experienced campus, more connected, and better neighbors.
+
+
 
 ## 🚀 Quick Start
 
