@@ -35,6 +35,8 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
   const [loadingExplore, setLoadingExplore] = useState(false);
   const [showLocationMap, setShowLocationMap] = useState(false);
   const [exploreResult, setExploreResult] = useState<{ points: number; streakPreserved: boolean } | null>(null);
+  const [directionsInfo, setDirectionsInfo] = useState<{ distance: string; duration: string } | null>(null);
+  const [loadingDirections, setLoadingDirections] = useState(false);
 
 
   const handleExplore = () => {
@@ -46,6 +48,8 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
             lng: position.coords.longitude,
             lat: position.coords.latitude
           }
+          
+          console.log('📍 USER LOCATION:', userCoords);
           
           // Find the correct location from locations.ts
           const correctLocation = UGA_LOCATIONS.find(loc => loc.id === todayChallenge?.location);
@@ -59,8 +63,20 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
             lng: correctLocation.coordinates.lng,
             lat: correctLocation.coordinates.lat
           }
+          
+          console.log('🎯 TARGET LOCATION:', correctLocation.name);
+          console.log('🎯 TARGET COORDS:', targetCoords);
+          
           const distance = haversine(userCoords, targetCoords)
+          
+          console.log('📏 CALCULATED DISTANCE:', distance, 'meters');
+          console.log('📏 CALCULATED DISTANCE:', (distance / 1609.34).toFixed(2), 'miles');
+          
           setUserDistance(distance)
+          
+          // Fetch real directions from Google Maps API
+          fetchDirections(userCoords, targetCoords);
+          
           setShowExplore(true)
           setLoadingLocation(false)
         },
@@ -73,6 +89,40 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
     } else {
       alert('Geolocation is not supported by your browser.')
       setLoadingLocation(false)
+    }
+  }
+
+  const fetchDirections = async (from: Coords, to: Coords) => {
+    setLoadingDirections(true);
+    try {
+      // Using Google Maps Directions API
+      // Note: This requires a public API key in production
+      const apiKey = 'AIzaSyDiqt1jKvwEV6_9gJ-_J5gJjvk3f5q_cEk'; // You'll need to add your own API key
+      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${from.lat},${from.lng}&destination=${to.lat},${to.lng}&mode=walking&key=${apiKey}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0].legs[0];
+        setDirectionsInfo({
+          distance: route.distance.text,
+          duration: route.duration.text
+        });
+        console.log('📍 Directions:', route.distance.text, '•', route.duration.text);
+      }
+    } catch (error) {
+      console.error('Failed to fetch directions:', error);
+      // Fallback to estimated time based on distance (assuming ~3 mph walking speed)
+      const miles = (userDistance || 0) / 1609.34;
+      const hours = miles / 3;
+      const minutes = Math.round(hours * 60);
+      setDirectionsInfo({
+        distance: `${miles.toFixed(2)} mi`,
+        duration: `${minutes} min`
+      });
+    } finally {
+      setLoadingDirections(false);
     }
   }
 
@@ -170,18 +220,6 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
             })()} away from the correct location.
           </p>
         )}
-        
-        {/* View Location on Map Button */}
-        <div className="mt-4">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => setShowLocationMap(true)}
-          >
-            <MapPin className="mr-2 h-4 w-4" />
-            View Location on Map
-          </Button>
-        </div>
       </div>}
 
       {/* Directions (for incorrect answers) */}
@@ -198,7 +236,7 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
               <div>
                 <p className="font-medium text-foreground">Get Directions</p>
                 <p className="text-sm text-muted-foreground">
-                  ~8 minute walk • 0.4 miles
+                  {loadingDirections ? 'Loading directions...' : directionsInfo ? `${directionsInfo.duration} walk • ${directionsInfo.distance}` : 'Calculate directions'}
                 </p>
               </div>
             </div>
@@ -224,12 +262,19 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
                 variant="outline"
                 className="mt-2 w-full"
                 onClick={() => {
-                  // Placeholder - would open native maps
-                  alert('This would open your maps app with directions!');
+                  if (todayChallenge) {
+                    const { lat, lng } = todayChallenge.coordinates;
+                    console.log('🗺️ MAPS LINK DEBUG:');
+                    console.log('Location:', todayChallenge.locationName);
+                    console.log('Coordinates:', lat, lng);
+                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                    console.log('Maps URL:', mapsUrl);
+                    window.open(mapsUrl, '_blank');
+                  }
                 }}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Open in Maps
+                Open in Google Maps
               </Button>
 
               <p className="mt-4 text-center text-sm text-muted-foreground">
@@ -300,8 +345,11 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
               variant="outline"
               className="mt-6 w-full"
               onClick={() => {
-                const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=33.95765026696892,-83.37532867077132'
-                window.open(mapsUrl, '_blank')
+                if (todayChallenge) {
+                  const { lat, lng } = todayChallenge.coordinates;
+                  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                  window.open(mapsUrl, '_blank');
+                }
               }}
             >
               <ExternalLink className="mr-2 h-4 w-4" />

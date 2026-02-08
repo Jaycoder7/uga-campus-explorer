@@ -5,7 +5,7 @@ const UGA_LOCATIONS = [
     name: 'Georgia Museum of Art',
     buildingCode: 'ART',
     category: 'cultural',
-    coordinates: { lat: 33.94121637848622, lng: -83.36971648623496 },
+    coordinates: { lat: 33.94114018973817, lng: -83.36980687052316 },
     imageUrl: '/placeholder.svg',
     funFact: 'The Georgia Museum of Art is the official art museum of the state of Georgia and houses over 10,000 works.',
     yearBuilt: 1996,
@@ -15,7 +15,7 @@ const UGA_LOCATIONS = [
     id: 'loc-022',
     name: 'Turtle Pond',
     category: 'nature',
-    coordinates: { lat: 33.9450380211186, lng: -83.37475295748452 },
+    coordinates: { lat: 33.94470036567655, lng: -83.37391505216773 },
     imageUrl: '/placeholder.svg',
     funFact: 'The Turtle Pond is a peaceful spot on campus where students often see turtles basking on logs.',
     yearBuilt: 1960,
@@ -25,7 +25,7 @@ const UGA_LOCATIONS = [
     id: 'loc-023',
     name: 'Hardman Hall',
     category: 'academic',
-    coordinates: { lat: 33.94584, lng: -83.37392 },
+    coordinates: { lat: 33.944849320655884, lng: -83.37389215911904 },
     imageUrl: '/placeholder.svg',
     funFact: 'Hardman Hall is a historic academic building known for its distinctive green lawn and classical architecture.',
     yearBuilt: 1920,
@@ -65,10 +65,8 @@ function getChallengeForDate(date) {
     throw new Error('No locations with 3D models available');
   }
   
-  // For testing, use current time in milliseconds to get different locations more often
-  const now = new Date();
-  // TEST MODE: Change location every 30 seconds for rapid testing
-  const seed = parseInt(dateStr.replace(/-/g, '')) + Math.floor(now.getTime() / (1000 * 30)); // Change every 30 seconds
+  // Use date only for consistent daily challenge (same challenge all day)
+  const seed = parseInt(dateStr.replace(/-/g, ''));
   const locationIndex = Math.abs(seed) % locationsWithModels.length;
   const location = locationsWithModels[locationIndex];
   
