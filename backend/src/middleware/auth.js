@@ -33,6 +33,23 @@ const protect = async (req, res, next) => {
     req.authUser = authData.user; // Supabase user
     req.userId = authData.user.id;
 
+    // Load user profile from database
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('id', authData.user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      console.error('User profile not found:', authData.user.id);
+      return res.status(404).json({
+        success: false,
+        error: "User profile not found",
+      });
+    }
+
+    req.user = userProfile; // User profile with stats
+
     next();
   } catch (err) {
     console.error("Auth middleware error:", err);
@@ -55,6 +72,7 @@ const optionalAuth = async (req, res, next) => {
     if (!token) {
       req.authUser = null;
       req.userId = null;
+      req.user = null;
       return next();
     }
 
@@ -63,17 +81,28 @@ const optionalAuth = async (req, res, next) => {
     if (error || !authData?.user) {
       req.authUser = null;
       req.userId = null;
+      req.user = null;
       return next();
     }
 
     req.authUser = authData.user;
     req.userId = authData.user.id;
 
+    // Load user profile from database
+    const { data: userProfile } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('id', authData.user.id)
+      .single();
+
+    req.user = userProfile || null;
+
     next();
   } catch (err) {
     console.error("Optional auth middleware error:", err);
     req.authUser = null;
     req.userId = null;
+    req.user = null;
     next();
   }
 };

@@ -3,6 +3,7 @@ import { GameState, DailyChallenge } from '@/types/game';
 import { MOCK_CHALLENGES, UGA_LOCATIONS, LOCATION_MODELS } from '@/data/locations';
 import { format, isToday, parseISO, differenceInDays } from 'date-fns';
 import { supabase } from '@/lib/supabaseClient';
+import { fetchWithAuth } from '@/lib/apiClient';
 
 interface GameContextType {
   gameState: GameState;
@@ -146,11 +147,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (user) {
           // Try to fetch from backend first (backend now uses locations.js)
           try {
-            const response = await fetch('http://localhost:3001/api/challenges/today', {
-              headers: {
-                'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-              }
-            });
+            const response = await fetchWithAuth('http://localhost:3001/api/challenges/today');
             
             if (response.ok) {
               const challengeData = await response.json();
@@ -273,9 +270,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             console.log('🧪 Sending test mode header');
           }
           
-          const response = await fetch('http://localhost:3001/api/challenges/submit', {
+          const response = await fetchWithAuth('http://localhost:3001/api/challenges/submit', {
             method: 'POST',
-            headers,
             body: JSON.stringify({ guess })
           });
 
@@ -353,29 +349,62 @@ export function GameProvider({ children }: { children: ReactNode }) {
       
       const today = format(new Date(), 'yyyy-MM-dd');
       
-      // Update local state
-      setGameState(prev => {
-        const newStreak = isCorrect ? prev.currentStreak + 1 : 0;
-        return {
-          ...prev,
-          currentStreak: newStreak,
-          bestStreak: Math.max(prev.bestStreak, newStreak),
-          totalPoints: prev.totalPoints + pointsEarned,
-          todayCompleted: true,
-          todayCorrect: isCorrect,
-          lastPlayedDate: today,
-          completedChallenges: [...prev.completedChallenges, todayChallenge.id],
-          discoveredLocations: isCorrect && !prev.discoveredLocations.includes(correctLocation.id!) 
-            ? [...prev.discoveredLocations, correctLocation.id!]
-            : prev.discoveredLocations
-        };
-      });
+      // Calculate new streak
+      const newStreak = isCorrect ? gameState.currentStreak + 1 : 0;
+      const newBestStreak = Math.max(gameState.bestStreak, newStreak);
+      const newTotalPoints = gameState.totalPoints + pointsEarned;
+      
+      // Update local state first
+      setGameState(prev => ({
+        ...prev,
+        currentStreak: newStreak,
+        bestStreak: newBestStreak,
+        totalPoints: newTotalPoints,
+        todayCompleted: true,
+        todayCorrect: isCorrect,
+        lastPlayedDate: today,
+        completedChallenges: [...prev.completedChallenges, todayChallenge.id],
+        discoveredLocations: isCorrect && !prev.discoveredLocations.includes(correctLocation.id!) 
+          ? [...prev.discoveredLocations, correctLocation.id!]
+          : prev.discoveredLocations
+      }));
       
       // Mark as played today in localStorage
       localStorage.setItem('lastPlayedDate', today);
       
       // Mark that user can't play again today
       setCanPlay(false);
+      
+      // Also sync to database if user is authenticated (even though backend submission failed)
+      if (user) {
+        try {
+          const session = await supabase.auth.getSession();
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.data.session?.access_token}`
+          };
+          
+          if (isTestMode) {
+            headers['x-test-mode'] = 'true';
+          }
+          
+          // Send sync request to backend to update user stats
+          await fetchWithAuth('http://localhost:3001/api/users/sync-stats', {
+            method: 'POST',
+            body: JSON.stringify({
+              currentStreak: newStreak,
+              bestStreak: newBestStreak,
+              totalPoints: newTotalPoints,
+              lastPlayedDate: today
+            })
+          }).catch(err => {
+            console.log('⚠️ Failed to sync stats to database:', err);
+            // Stats still saved in localStorage, can sync later
+          });
+        } catch (syncError) {
+          console.log('⚠️ Could not sync stats to database');
+        }
+      }
       
       console.log('📊 LOCAL: Points earned:', pointsEarned);
       
@@ -411,17 +440,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const session = await supabase.auth.getSession();
         
         const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.data.session?.access_token}`
+          'Content-Type': 'application/json'
         };
         
         if (isTestMode) {
           headers['x-test-mode'] = 'true';
         }
         
-        const response = await fetch('http://localhost:3001/api/challenges/explore', {
-          method: 'POST',
-          headers
+        const response = await fetchWithAuth('http://localhost:3001/api/challenges/explore', {
+          method: 'POST'
         });
 
         if (response.ok) {

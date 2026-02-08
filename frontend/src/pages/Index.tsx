@@ -66,34 +66,19 @@ export default function Index() {
     console.log('Selected coordinates:', coordinates);
     console.log('Challenge location ID:', todayChallenge.location);
     console.log('Challenge location name:', todayChallenge.locationName);
+    console.log('Challenge coordinates from context:', todayChallenge.coordinates);
     
     setShowMapPicker(false);
     setIsSubmitting(true);
     
     try {
-      // Find the correct location from locations.ts using the challenge's location ID
-      const correctLocation = UGA_LOCATIONS.find(loc => loc.id === todayChallenge.location);
-      
-      console.log('🔍 Looking for location with ID:', todayChallenge.location);
-      console.log('🏢 Available locations:', UGA_LOCATIONS.map(l => ({ id: l.id, name: l.name })));
-      console.log('✅ Found correct location:', correctLocation);
-      
-      if (!correctLocation) {
-        console.error('❌ LOCATION DATA NOT FOUND!');
-        console.error('Challenge location ID:', todayChallenge.location);
-        console.error('Available location IDs:', UGA_LOCATIONS.map(l => l.id));
-        setLastResult({ correct: false, points: 0, error: 'Location data not found' });
-        setPhase('result');
-        return;
-      }
-      
-      // Use coordinates from locations.ts for validation
+      // Use the coordinates directly from the challenge since the backend/context already provides them
       const targetCoords = { 
-        lng: correctLocation.coordinates.lng, 
-        lat: correctLocation.coordinates.lat 
+        lng: todayChallenge.coordinates.lng, 
+        lat: todayChallenge.coordinates.lat 
       };
       
-      console.log('🎯 Target coordinates:', targetCoords);
+      console.log('🎯 Target coordinates (from challenge):', targetCoords);
       
       // Check if coordinates are close enough to the correct location (within 500ft / 152.4m)
       const radiusMeters = 152.4;
