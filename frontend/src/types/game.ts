@@ -2,7 +2,7 @@ export interface Location {
   id: string;
   name: string;
   buildingCode?: string;
-  category: 'academic' | 'historic' | 'athletic' | 'residence' | 'dining';
+  category: 'academic' | 'historic' | 'athletic' | 'residence' | 'dining' | 'cultural' | 'nature';
   coordinates: { lat: number; lng: number };
   imageUrl: string;
   funFact: string;
@@ -13,6 +13,7 @@ export interface Location {
 export interface DailyChallenge {
   id: string;
   date: string;
+  location?: string;
   locationName: string;
   buildingCode?: string;
   imageUrl: string;
@@ -20,7 +21,7 @@ export interface DailyChallenge {
   funFact: string;
   coordinates: { lat: number; lng: number };
   directions: string[];
-  category: 'academic' | 'historic' | 'athletic' | 'residence' | 'dining';
+  category: 'academic' | 'historic' | 'athletic' | 'residence' | 'dining' | 'cultural' | 'nature';
 }
 
 export interface Achievement {

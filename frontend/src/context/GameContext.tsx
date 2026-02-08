@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { GameState, DailyChallenge } from '@/types/game';
-import { MOCK_CHALLENGES, UGA_LOCATIONS } from '@/data/locations';
+import { MOCK_CHALLENGES, UGA_LOCATIONS, LOCATION_MODELS } from '@/data/locations';
 import { format, isToday, parseISO, differenceInDays } from 'date-fns';
 
 interface GameContextType {
@@ -9,6 +9,7 @@ interface GameContextType {
   startChallenge: () => void;
   submitGuess: (guess: string) => { correct: boolean; points: number };
   resetGame: () => void;
+  refreshChallenge: () => void;
   isLoading: boolean;
   lastMapDistance?: number | null;
   setLastMapDistance?: (d: number | null) => void;
@@ -41,14 +42,20 @@ function getChallengeForDate(date: Date): DailyChallenge {
     return mockChallenge;
   }
   
-  // Generate a deterministic challenge based on date
+  // Filter locations that have 3D models
+  const locationsWithModels = UGA_LOCATIONS.filter(loc => 
+    loc.id && LOCATION_MODELS[loc.id]
+  );
+  
+  // Generate a deterministic but random-seeming challenge based on date
   const dateNumber = parseInt(format(date, 'yyyyMMdd'));
-  const locationIndex = Math.abs(Math.floor(Math.sin(dateNumber) * 10000)) % UGA_LOCATIONS.length;
-  const location = UGA_LOCATIONS[locationIndex];
+  const locationIndex = Math.abs(Math.floor(Math.sin(dateNumber) * 10000)) % locationsWithModels.length;
+  const location = locationsWithModels[locationIndex];
   
   return {
     id: `generated-${dateStr}`,
     date: dateStr,
+    location: location.id,
     locationName: location.name,
     buildingCode: location.buildingCode,
     imageUrl: location.imageUrl,
@@ -199,6 +206,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const resetGame = () => {
     setGameState(defaultGameState);
     localStorage.removeItem(STORAGE_KEY);
+    setTodayChallenge(getChallengeForDate(new Date()));
+  };
+
+  const refreshChallenge = () => {
+    // Force regenerate today's challenge - useful for testing
+    setTodayChallenge(getChallengeForDate(new Date()));
   };
 
   return (
@@ -209,6 +222,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         startChallenge,
         submitGuess,
         resetGame,
+        refreshChallenge,
         isLoading,
         lastMapDistance,
         setLastMapDistance,
