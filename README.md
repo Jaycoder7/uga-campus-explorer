@@ -111,20 +111,16 @@ uga-campus-explorer/
 ## 🎮 Game Features
 
 ### Frontend Features
-- **Daily Challenges** - New location-based puzzles each day
-- **Interactive Map** - Visual exploration of campus locations
-- **Achievement System** - Unlock badges for various accomplishments
-- **Leaderboards** - Compete with other players
-- **User Profiles** - Track personal progress and statistics
-- **Responsive Design** - Works on desktop and mobile devices
+- **Daily Challenge** - New location each day
+- **Stat** - Shows your streaks, best streak, points, locations
+- **Leaderboards** - Compete with other players based on streaks
+- **How to** - How to use the app guide
 
 ### Backend Features
 - **Authentication** - Secure user registration and login with JWT
 - **RESTful API** - Comprehensive endpoints for all game functionality
-- **Daily Challenge Generation** - Automated creation of daily puzzles
 - **Real-time Statistics** - Live leaderboards and user progress tracking
-- **Achievement Engine** - Automatic achievement unlocking
-- **Scheduled Tasks** - Automated daily operations
+- **Scheduled Tasks** - Automated new locations for each day
 - **Security** - Rate limiting, input validation, and secure practices
 
 ## 🏗️ Architecture
