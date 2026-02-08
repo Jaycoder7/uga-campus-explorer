@@ -5,10 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GameProvider } from "@/context/GameContext";
 import { Navigation } from "@/components/layout/Navigation";
+import AuthGuard from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
 import Stats from "./pages/Stats";
 import Explore from "./pages/Explore";
 import Leaderboard from "./pages/Leaderboard";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup"; 
 import HowToPlay from "./pages/HowToPlay";
 import NotFound from "./pages/NotFound";
 
@@ -23,11 +26,16 @@ const App = () => (
         <BrowserRouter>
           <Navigation />
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/stats" element={<Stats />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
+            {/* Public routes */}
+            <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/how-to-play" element={<HowToPlay />} />
+            <Route path="/explore" element={<Explore />} />
+
+            {/* Protected routes */}
+            <Route path="/stats" element={<AuthGuard><Stats /></AuthGuard>} />
+            <Route path="/leaderboard" element={<AuthGuard><Leaderboard /></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, BarChart3, Map, Trophy, Info } from 'lucide-react';
+import UserButton from '../auth/userButton';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -39,6 +40,10 @@ export function Navigation() {
             </NavLink>
           );
         })}
+
+         <div className="absolute top-1 right-2 md:top-1 md:right-2">
+          <UserButton />
+        </div>
       </div>
     </nav>
   );

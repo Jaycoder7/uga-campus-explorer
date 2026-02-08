@@ -127,103 +127,26 @@ const updateProfile = async (req, res, next) => {
 
 const getStats = async (req, res, next) => {
   try {
-    // Get comprehensive user statistics
-    const { data: challengeAttempts, error: attemptsError } = await supabaseAdmin
-      .from('challenge_attempts')
-      .select(`
-        correct,
-        points_earned,
-        attempted_at,
-        daily_challenges (
-          challenge_date,
-          locations (
-            category
-          )
-        )
-      `)
-      .eq('user_id', req.user.id);
+    const { userId } = req.params; // or req.body depending on how you send it
 
-    const { data: userLocations, error: locationsError } = await supabaseAdmin
-      .from('user_locations')
-      .select(`
-        discovered_at,
-        locations (
-          category
-        )
-      `)
-      .eq('user_id', req.user.id);
-
-    if (attemptsError || locationsError) {
-      throw new AppError('Failed to fetch user statistics', 500);
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
     }
 
-    const totalAttempts = challengeAttempts?.length || 0;
-    const correctAttempts = challengeAttempts?.filter(attempt => attempt.correct).length || 0;
-    const accuracy = totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 0;
+    // Fetch user stats
+    const { data, error } = await supabaseAdmin
+      .from("users")
+      .select("current_streak, best_streak, total_points, total_locations")
+      .eq("id", userId)
+      .single(); // .single() ensures you only get one object
 
-    // Category-wise accuracy
-    const categoryAccuracy = {};
-    const categories = ['academic', 'historic', 'athletic', 'residence', 'dining'];
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
 
-    categories.forEach(category => {
-      const categoryAttempts = challengeAttempts?.filter(
-        attempt => attempt.daily_challenges.locations.category === category
-      ) || [];
-      const categoryCorrect = categoryAttempts.filter(attempt => attempt.correct).length;
-      
-      categoryAccuracy[category] = {
-        attempts: categoryAttempts.length,
-        correct: categoryCorrect,
-        accuracy: categoryAttempts.length > 0 
-          ? Math.round((categoryCorrect / categoryAttempts.length) * 100) 
-          : 0
-      };
-    });
-
-    // Monthly breakdown (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const monthlyStats = {};
-    challengeAttempts?.forEach(attempt => {
-      const attemptDate = new Date(attempt.attempted_at);
-      if (attemptDate >= sixMonthsAgo) {
-        const monthKey = attemptDate.toISOString().substring(0, 7); // YYYY-MM format
-        if (!monthlyStats[monthKey]) {
-          monthlyStats[monthKey] = { attempts: 0, correct: 0, points: 0 };
-        }
-        monthlyStats[monthKey].attempts++;
-        if (attempt.correct) monthlyStats[monthKey].correct++;
-        monthlyStats[monthKey].points += attempt.points_earned;
-      }
-    });
-
-    // Discovery timeline
-    const discoveryTimeline = userLocations?.map(ul => ({
-      date: ul.discovered_at,
-      category: ul.locations.category
-    })).sort((a, b) => new Date(a.date) - new Date(b.date)) || [];
-
-    res.status(200).json({
-      success: true,
-      data: {
-        overall: {
-          total_attempts: totalAttempts,
-          correct_attempts: correctAttempts,
-          accuracy,
-          total_points: req.user.total_points,
-          current_streak: req.user.current_streak,
-          best_streak: req.user.best_streak,
-          total_locations: userLocations?.length || 0
-        },
-        category_accuracy: categoryAccuracy,
-        monthly_breakdown: monthlyStats,
-        discovery_timeline: discoveryTimeline
-      }
-    });
-
-  } catch (error) {
-    next(error);
+    return res.status(200).json(data);
+  } catch (err) {
+    return res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -287,9 +210,149 @@ const getDiscoveries = async (req, res, next) => {
   }
 };
 
+/**
+ * Sync the logged-in Supabase user to the backend database.
+ * Creates a new record if it doesn't exist.
+ */
+const syncUser = async (req, res) => {
+  try {
+    const authUser = req.authUser; // from protect middleware
+
+    // Check if user exists
+    const { data: existingUser, error: fetchError } = await supabaseAdmin
+      .from("users")
+      .select("*")
+      .eq("id", authUser.id)
+      .single();
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      // PGRST116 = no rows found, ignore
+      throw fetchError;
+    }
+
+    let user = existingUser;
+
+    // If not, insert a new user
+    if (!existingUser) {
+      const { data: newUser, error: insertError } = await supabaseAdmin
+        .from("users")
+        .insert({
+          id: authUser.id,
+          email: authUser.email,
+          created_at: new Date(),
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      user = newUser;
+    }
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error("syncUser error:", err);
+    res.status(500).json({ success: false, error: "Failed to sync user" });
+  }
+};
+
+const updateTotalPoints = async (req, res, next) => {
+  try {
+    const { points } = req.body;
+
+    if (typeof points !== 'number') {
+      return res.status(400).json({ success: false, error: 'Invalid points' });
+    }
+
+    // Fetch user total points
+    const { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select('total_points')
+      .eq('id', req.userId) // <- use req.userId from protect middleware
+      .single();
+
+    if (error) throw new Error('Failed to fetch user points');
+
+    // Update total points
+    const { data: updatedUser, error: updateError } = await supabaseAdmin
+      .from('users')
+      .update({ total_points: (user.total_points || 0) + points })
+      .eq('id', req.userId) // <- use req.userId here too
+      .select()
+      .single();
+
+    if (updateError) throw new Error('Failed to update points');
+
+    res.status(200).json({ success: true, data: { user: updatedUser } });
+
+  } catch (err) {
+    console.error('updateTotalPoints error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+/**
+ * Sync user stats from client to database
+ * Used when client validation runs but backend needs to record the stats
+ */
+const syncStats = async (req, res, next) => {
+  try {
+    const { currentStreak, bestStreak, totalPoints, lastPlayedDate } = req.body;
+
+    if (typeof currentStreak !== 'number' || typeof bestStreak !== 'number' || typeof totalPoints !== 'number') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid stats format' 
+      });
+    }
+
+    console.log('📊 SYNC STATS: Updating user stats from client');
+    console.log('User ID:', req.user.id);
+    console.log('Stats:', { currentStreak, bestStreak, totalPoints, lastPlayedDate });
+
+    // Update user stats
+    const { data: updatedUser, error: updateError } = await supabaseAdmin
+      .from('users')
+      .update({
+        current_streak: currentStreak,
+        best_streak: bestStreak,
+        total_points: totalPoints,
+        last_played_date: lastPlayedDate ? new Date(lastPlayedDate).toISOString() : null
+      })
+      .eq('id', req.user.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('❌ Failed to sync stats:', updateError);
+      throw new AppError('Failed to sync stats to database', 500);
+    }
+
+    console.log('✅ Stats synced successfully');
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user_stats: {
+          current_streak: updatedUser.current_streak,
+          best_streak: updatedUser.best_streak,
+          total_points: updatedUser.total_points
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Sync stats error:', error);
+    next(error);
+  }
+};
+
+
 module.exports = {
   getProfile,
   updateProfile,
   getStats,
-  getDiscoveries
+  getDiscoveries,
+  syncUser,
+  updateTotalPoints,
+  syncStats,
 };

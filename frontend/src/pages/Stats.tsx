@@ -1,9 +1,18 @@
+import { useEffect } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Star, Flame, Trophy, MapPin } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 
+
 export default function Stats() {
-  const { gameState } = useGame();
+  const { gameState, refreshStats, isLoading } = useGame();
+
+  // Refresh stats when component mounts to ensure we have latest data
+  useEffect(() => {
+    refreshStats();
+  }, []);
+
+  if (isLoading) return <PageLayout title="Your Progress">Loading...</PageLayout>;
 
   const stats = [
     {
@@ -38,14 +47,12 @@ export default function Stats() {
 
   return (
     <PageLayout title="Your Progress">
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {stats.map(({ icon: Icon, label, value, color, bg }) => (
-          <div
-            key={label}
-            className="rounded-xl bg-card p-4 text-center shadow-card"
-          >
-            <div className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full ${bg}`}>
+          <div key={label} className="rounded-xl bg-card p-4 text-center shadow-card">
+            <div
+              className={`mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full ${bg}`}
+            >
               <Icon className={`h-6 w-6 ${color}`} />
             </div>
             <p className="text-2xl font-bold text-foreground">{value}</p>
@@ -54,7 +61,6 @@ export default function Stats() {
         ))}
       </div>
 
-      {/* Placeholder for more content */}
       <div className="mt-8 rounded-xl bg-card p-6 text-center shadow-card">
         <p className="text-muted-foreground">
           Full stats page with calendar view, history, and achievements coming soon!

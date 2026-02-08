@@ -42,7 +42,7 @@ A complete Node.js + Express backend API for the UGA Campus Explorer game using 
    ```env
    PORT=3001
    NODE_ENV=development
-   FRONTEND_URL=http://localhost:5173
+   FRONTEND_URL=http://localhost:8080
    
    SUPABASE_URL=your_supabase_project_url
    SUPABASE_ANON_KEY=your_supabase_anon_key
