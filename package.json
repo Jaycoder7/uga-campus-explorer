@@ -55,5 +55,8 @@
   "bugs": {
     "url": "https://github.com/yourusername/uga-campus-explorer/issues"
   },
-  "homepage": "https://github.com/yourusername/uga-campus-explorer#readme"
+  "homepage": "https://github.com/yourusername/uga-campus-explorer#readme",
+  "dependencies": {
+    "@tanstack/react-table": "^8.21.3"
+  }
 }

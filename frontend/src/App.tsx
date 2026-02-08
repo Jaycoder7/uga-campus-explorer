@@ -27,7 +27,7 @@ const App = () => (
           <Navigation />
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/how-to-play" element={<HowToPlay />} />

@@ -192,7 +192,60 @@ const getUserRank = async (req, res, next) => {
   }
 };
 
+const getTopUsersByTotalPoints = async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("users")
+      .select("id, username, total_points")
+      .order("total_points", { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error("Error fetching top users by total points:", error);
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      users: data,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+
+const getTopUsersByStreak = async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("users")
+      .select("id, username, current_streak")
+      .order("current_streak", { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error("Error fetching top users by current streak:", error);
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      users: data,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+
+
 module.exports = {
   getLeaderboard,
-  getUserRank
+  getUserRank,
+  getTopUsersByTotalPoints,
+  getTopUsersByStreak,
 };

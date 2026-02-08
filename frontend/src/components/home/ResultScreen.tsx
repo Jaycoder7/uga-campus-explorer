@@ -77,33 +77,6 @@ export function ResultScreen({ correct, pointsEarned }: ResultScreenProps) {
     }
   }
 
-  useEffect(() => {
-  if (correct && pointsEarned > 0) {
-    const updatePoints = async () => {
-      try {
-        const response = await fetchWithAuth('http://localhost:3001/api/users/points', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ points: pointsEarned })
-        });
-
-        const data = await response.json();
-
-        if (!data.success) {
-          console.error('Failed to update points:', data.error);
-        } else {
-          console.log('Points updated successfully!', data.data.user.total_points);
-        }
-      } catch (err) {
-        console.error('Error updating points:', err);
-      }
-    };
-
-    updatePoints();
-  }
-}, [correct, pointsEarned]);
-
-
   if (!todayChallenge) return null;
 
   return (
