@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Map as MapIcon, Sparkles, Star } from "lucide-react";
+import { useGame } from "@/context/GameContext";
 
 export default function Magic() {
   const [story, setStory] = useState("");
+  const {todayChallenge} = useGame();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,8 +21,8 @@ export default function Magic() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          "name": "Ricky",
-          "location": "North Campus Fountain",
+          "name": "You",
+          "location": todayChallenge?.locationName || "a mysterious location on the UGA campus",
           "length": 200
         }
         ),

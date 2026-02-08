@@ -256,14 +256,14 @@ export function ResultScreen({ correct, pointsEarned, error }: ResultScreenProps
               disabled={loadingExplore || exploreResult !== null}
             >
               <MapPin className="mr-2 h-4 w-4" />
-              {loadingExplore ? 'Exploring...' : exploreResult ? `Explored! +${exploreResult.points} pts` : 'Explore & Keep Streak'}
+              {loadingExplore ? 'Exploring...' : exploreResult ? `Not at location! Please move closer to explore` : 'Explore & Keep Streak'}
             </Button>
             
-            {exploreResult && exploreResult.streakPreserved && (
+            {/* {exploreResult && exploreResult.streakPreserved && (
               <p className="text-center text-sm text-success">
-                🔥 Streak preserved! Great job exploring campus!
+                Not at location! Please move closer to explore
               </p>
-            )}
+            )} */}
           </div>
         </div>
       )}
