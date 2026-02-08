@@ -290,6 +290,62 @@ const updateTotalPoints = async (req, res, next) => {
   }
 };
 
+/**
+ * Sync user stats from client to database
+ * Used when client validation runs but backend needs to record the stats
+ */
+const syncStats = async (req, res, next) => {
+  try {
+    const { currentStreak, bestStreak, totalPoints, lastPlayedDate } = req.body;
+
+    if (typeof currentStreak !== 'number' || typeof bestStreak !== 'number' || typeof totalPoints !== 'number') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid stats format' 
+      });
+    }
+
+    console.log('📊 SYNC STATS: Updating user stats from client');
+    console.log('User ID:', req.user.id);
+    console.log('Stats:', { currentStreak, bestStreak, totalPoints, lastPlayedDate });
+
+    // Update user stats
+    const { data: updatedUser, error: updateError } = await supabaseAdmin
+      .from('users')
+      .update({
+        current_streak: currentStreak,
+        best_streak: bestStreak,
+        total_points: totalPoints,
+        last_played_date: lastPlayedDate ? new Date(lastPlayedDate).toISOString() : null
+      })
+      .eq('id', req.user.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('❌ Failed to sync stats:', updateError);
+      throw new AppError('Failed to sync stats to database', 500);
+    }
+
+    console.log('✅ Stats synced successfully');
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user_stats: {
+          current_streak: updatedUser.current_streak,
+          best_streak: updatedUser.best_streak,
+          total_points: updatedUser.total_points
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Sync stats error:', error);
+    next(error);
+  }
+};
+
 
 module.exports = {
   getProfile,
@@ -298,4 +354,5 @@ module.exports = {
   getDiscoveries,
   syncUser,
   updateTotalPoints,
+  syncStats,
 };

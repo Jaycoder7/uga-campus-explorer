@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { ZoomIn, ZoomOut, Lightbulb, MapPin, Image, Box } from 'lucide-react';
+import { ZoomIn, ZoomOut, Lightbulb, MapPin, Image, Box, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGame } from '@/context/GameContext';
 import { Scene3D } from './Scene3D';
 
 interface ChallengeImageProps {
-  onGuess: () => void;
+  onMapGuess: () => void;
 }
 
-export function ChallengeImage({ onGuess }: ChallengeImageProps) {
-  const { todayChallenge } = useGame();
+export function ChallengeImage({ onMapGuess }: ChallengeImageProps) {
+  const { todayChallenge, refreshChallenge } = useGame();
   const [zoom, setZoom] = useState(1.5);
   const [showHint, setShowHint] = useState(false);
   const [hintAvailable, setHintAvailable] = useState(false);
@@ -74,6 +74,15 @@ export function ChallengeImage({ onGuess }: ChallengeImageProps) {
         {/* View Mode Toggle */}
         <div className="absolute top-4 right-4 flex gap-2">
           <Button
+            variant="secondary"
+            size="icon"
+            onClick={() => refreshChallenge && refreshChallenge()}
+            className="h-10 w-10 rounded-full bg-card/90 shadow-lg backdrop-blur-sm"
+            title="Refresh Challenge (Dev Mode)"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Button
             variant={viewMode === '3d' ? 'default' : 'secondary'}
             size="icon"
             onClick={() => setViewMode('3d')}
@@ -128,12 +137,12 @@ export function ChallengeImage({ onGuess }: ChallengeImageProps) {
       {/* Action Buttons */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button
-          onClick={onGuess}
+          onClick={onMapGuess}
           className="flex-1 bg-success text-success-foreground hover:bg-success/90"
           size="lg"
         >
           <MapPin className="mr-2 h-5 w-5" />
-          I know this place!
+          Select Location on Map
         </Button>
         
         {hintAvailable && !showHint ? (

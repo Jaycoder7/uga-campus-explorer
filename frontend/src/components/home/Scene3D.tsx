@@ -5,6 +5,7 @@ import {
   useGLTF
 } from '@react-three/drei';
 import * as THREE from 'three';
+import { LOCATION_MODELS } from '@/data/locations';
 
 interface Scene3DProps {
   locationId?: string;
@@ -18,7 +19,11 @@ function GLBModel({ url, position, scale = 1, rotation }: {
   scale?: number | [number, number, number];
   rotation?: [number, number, number];
 }) {
+  console.log('🎨 LOADING 3D MODEL:', url);
+  
   const { scene } = useGLTF(url);
+  
+  console.log('✅ 3D MODEL LOADED:', url);
   
   return (
     <primitive 
@@ -30,7 +35,16 @@ function GLBModel({ url, position, scale = 1, rotation }: {
   );
 }
 
-export function Scene3D({ zoom = 1 }: Scene3DProps) {
+export function Scene3D({ locationId, zoom = 1 }: Scene3DProps) {
+  // Get the model file path for this location, fallback to TurtlePond if not found
+  const modelPath = locationId && LOCATION_MODELS[locationId] 
+    ? LOCATION_MODELS[locationId] 
+    : '/models/TurtlePond.glb';
+
+  console.log('🎭 SCENE3D DEBUG:');
+  console.log('Location ID:', locationId);
+  console.log('Model path:', modelPath);
+  console.log('Available models:', LOCATION_MODELS);
 
   return (
     <div style={{ width: '100%', height: '100%', margin: 0, padding: 0, overflow: 'hidden', position: 'relative' }}>
@@ -73,7 +87,7 @@ export function Scene3D({ zoom = 1 }: Scene3DProps) {
           {/* Your GLB Model */}
           <Suspense fallback={null}>
             <GLBModel 
-              url="/models/TurtlePond.glb" 
+              url={modelPath}
               position={[0, -1, 0]} 
               scale={1}
               rotation={[0, 0, 0]}
