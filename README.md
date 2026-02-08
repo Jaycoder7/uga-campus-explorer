@@ -1,5 +1,13 @@
 # UGA Campus Explorer
+
+## Team Members
+Jyotil Agrawal
+Dhaval Reddy Pucha
+Ricky Correia
+
 ## Project info about hackathon
+
+
 
 A complete location-based campus discovery game for the University of Georgia. Players explore campus by solving daily location challenges to discover landmarks.
 ## 📁 Project Structure
@@ -28,10 +36,7 @@ uga-campus-explorer/
 ├── package.json            # Root package.json for monorepo
 └── README.md               # This file
 ```
-## 👥 Team
-Dhaval
-Jyotil
-Ricky
+
 
 ## 💡 Purpose of Project
 UGA Campus Explorer is a gamified tool built for the UGA community. While thousands of students walk through the Arch every day, many remain "strangers" to the rich history and essential resources of our campus.
